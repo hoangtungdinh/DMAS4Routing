@@ -52,8 +52,8 @@ public class Package extends Parcel implements TickListener, CommUser {
 
         for (Message message : msgs) {
           if (message.getContents() instanceof TaskBid) {
-            double distance = getDistance(message.getSender().getPosition(),
-                this.getPosition());
+            double distance = getDistance(message.getSender().getPosition().get(),
+                this.getPosition().get());
 
             if (distance < bestDistance) {
               if (winner != null) {
@@ -87,8 +87,8 @@ public class Package extends Parcel implements TickListener, CommUser {
   public void afterTick(TimeLapse timeLapse) {}
 
   @Override
-  public Point getPosition() {
-    return startPosition;
+  public Optional<Point> getPosition() {
+    return Optional.of(startPosition);
   }
 
   @Override

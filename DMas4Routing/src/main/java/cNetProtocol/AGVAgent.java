@@ -45,8 +45,8 @@ public class AGVAgent extends Vehicle implements CommUser {
         CommUser sender = null;
         for (Message message : messageList) {
           if (message.getContents() instanceof TaskAnnouncement) {
-            double distance = getDistance(this.getPosition(), message
-                .getSender().getPosition());
+            double distance = getDistance(this.getPosition().get(), message
+                .getSender().getPosition().get());
 
             if (distance < bestDistance) {
               bestDistance = distance;
@@ -56,7 +56,7 @@ public class AGVAgent extends Vehicle implements CommUser {
         }
 
         if (sender != null) {
-          device.get().send(new TaskBid(this.getPosition()), sender);
+          device.get().send(new TaskBid(this.getPosition().get()), sender);
           state = State.WAITING;
         }
       }
@@ -101,8 +101,8 @@ public class AGVAgent extends Vehicle implements CommUser {
   }
 
   @Override
-  public Point getPosition() {
-    return roadModel.get().getPosition(this);
+  public Optional<Point> getPosition() {
+    return Optional.of(roadModel.get().getPosition(this));
   }
 
   @Override
