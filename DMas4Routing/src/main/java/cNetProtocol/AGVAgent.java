@@ -19,7 +19,7 @@ public class AGVAgent extends Vehicle implements CommUser {
   Optional<RoadModel> roadModel;
   Optional<PDPModel> pdpModel;
   Optional<CommDevice> device;
-  private double range = 2.0;
+  private double range = 100.0;
   private double reliability = 1.0;
   private State state = State.IDLE;
   private Package parcel = null;
@@ -77,6 +77,8 @@ public class AGVAgent extends Vehicle implements CommUser {
           roadModel.get().moveTo(this, parcel.getDestination(), time);
           if (roadModel.get().getPosition(this).equals(parcel.getDestination())) {
             pdpModel.get().deliver(this, parcel, time);
+            device.get().getUnreadMessages();
+            state = State.IDLE;
           }
         }
       }

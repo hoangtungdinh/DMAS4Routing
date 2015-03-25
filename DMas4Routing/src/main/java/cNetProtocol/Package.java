@@ -20,7 +20,7 @@ public class Package extends Parcel implements TickListener, CommUser {
 
   private boolean hasContractor = false;
   private Point startPosition;
-  private double range = 2.0;
+  private double range = 100.0;
   private double reliability = 1.0;
   Optional<CommDevice> device;
   private State state = State.BROADCASTING;
@@ -70,6 +70,9 @@ public class Package extends Parcel implements TickListener, CommUser {
         
         if (winner != null) {
           device.get().send(new TaskAward(true), winner);
+          for (CommUser commUser : loosers) {
+            device.get().send(new TaskAward(false), commUser);
+          }
           hasContractor = true;
         } else {
           if (counter == 3) {

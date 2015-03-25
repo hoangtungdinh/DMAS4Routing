@@ -53,7 +53,7 @@ public final class CNetExample {
      }
     for (int i = 0; i < NUM_PARCEL; i++) {
       simulator.register(new Package(planeModel.getRandomPosition(rng),
-          planeModel.getRandomPosition(rng), 1, 1, 1 + rng.nextInt(3)));
+          planeModel.getRandomPosition(rng), 1, 1, 1.0));
     }
     
     simulator.addTickListener(new TickListener() {
@@ -61,7 +61,7 @@ public final class CNetExample {
       public void tick(TimeLapse time) {
         if (rng.nextDouble() < .007) {
           simulator.register(new Package(planeModel.getRandomPosition(rng),
-              planeModel.getRandomPosition(rng), 1, 1, 1 + rng.nextInt(3)));
+              planeModel.getRandomPosition(rng), 1, 1, 1.0));
         }
       }
 
