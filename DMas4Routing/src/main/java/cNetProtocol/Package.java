@@ -41,7 +41,7 @@ public class Package extends Parcel implements TickListener, CommUser {
   public void tick(TimeLapse timeLapse) {
     if (!hasContractor) {
       if (state == State.BROADCASTING) {
-        device.get().broadcast(new TaskAnnouncements(startPosition));
+        device.get().broadcast(new TaskAnnouncement(startPosition));
         state = State.WAITING_BIDS;
       } else {
         counter++;
@@ -52,9 +52,8 @@ public class Package extends Parcel implements TickListener, CommUser {
 
         for (Message message : msgs) {
           if (message.getContents() instanceof TaskBid) {
-            TaskBid taskBid = (TaskBid) message.getContents();
-            Point avgLocation = taskBid.getAGVLocation();
-            double distance = getDistance(avgLocation, startPosition);
+            double distance = getDistance(message.getSender().getPosition(),
+                this.getPosition());
 
             if (distance < bestDistance) {
               if (winner != null) {

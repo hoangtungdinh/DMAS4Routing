@@ -14,7 +14,7 @@ import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 
 public class AGVAgent extends Vehicle implements CommUser {
-  
+
   private static final double SPEED = 1000d;
   Optional<RoadModel> roadModel;
   Optional<PDPModel> pdpModel;
@@ -23,7 +23,7 @@ public class AGVAgent extends Vehicle implements CommUser {
   private double reliability = 1.0;
   private State state = State.IDLE;
   private Package parcel = null;
-  
+
   public AGVAgent(Point startPosition) {
     setStartPosition(startPosition);
     setCapacity(3.0);
@@ -36,19 +36,28 @@ public class AGVAgent extends Vehicle implements CommUser {
     return SPEED;
   }
 
-
   @Override
   protected void tickImpl(TimeLapse time) {
     if (state == State.IDLE) {
       if (device.get().getUnreadCount() != 0) {
         List<Message> messageList = device.get().getUnreadMessages();
+        double bestDistance = 999;
+        CommUser sender = null;
         for (Message message : messageList) {
-          if (message.getContents() instanceof TaskAnnouncements) {
-            CommUser sender = message.getSender();
-            device.get().send(new TaskBid(this.getPosition()), sender);
-            state = State.WAITING;
-            break;
+          if (message.getContents() instanceof TaskAnnouncement) {
+            double distance = getDistance(this.getPosition(), message
+                .getSender().getPosition());
+
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              sender = message.getSender();
+            }
           }
+        }
+
+        if (sender != null) {
+          device.get().send(new TaskBid(this.getPosition()), sender);
+          state = State.WAITING;
         }
       }
     } else if (state == State.WAITING) {
@@ -67,7 +76,7 @@ public class AGVAgent extends Vehicle implements CommUser {
     } else {
       if (parcel != null) {
         final boolean inCargo = pdpModel.get().containerContains(this, parcel);
-        
+
         if (!inCargo) {
           roadModel.get().moveTo(this, parcel, time);
           if (roadModel.get().equalPosition(this, parcel)) {
@@ -101,13 +110,15 @@ public class AGVAgent extends Vehicle implements CommUser {
     if (range >= 0) {
       builder.setMaxRange(range);
     }
-    device = Optional.of(builder
-        .setReliability(reliability)
-        .build());
+    device = Optional.of(builder.setReliability(reliability).build());
   }
-  
+
   enum State {
     IDLE, WAITING, WORKING
   }
 
+  public double getDistance(Point p1, Point p2) {
+    return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y)
+        * (p1.y - p2.y));
+  }
 }

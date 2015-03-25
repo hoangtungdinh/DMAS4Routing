@@ -19,7 +19,7 @@ public final class CNetExample {
   static final double VEHICLE_SPEED_KMH = 50d;
   static final Point MIN_POINT = new Point(0, 0);
   static final Point MAX_POINT = new Point(10, 10);
-  static final int NUM_AGV = 5;
+  static final int NUM_AGV = 20;
   static final int NUM_PARCEL = 10;
 
   private CNetExample() {}

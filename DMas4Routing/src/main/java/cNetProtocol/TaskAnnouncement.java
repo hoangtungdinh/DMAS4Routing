@@ -3,11 +3,11 @@ package cNetProtocol;
 import com.github.rinde.rinsim.core.model.comm.MessageContents;
 import com.github.rinde.rinsim.geom.Point;
 
-public class TaskAnnouncements implements MessageContents {
+public class TaskAnnouncement implements MessageContents {
   
   private Point taskLocation;
   
-  public TaskAnnouncements(Point location) {
+  public TaskAnnouncement(Point location) {
     this.taskLocation = location;
   }
   
