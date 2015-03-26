@@ -70,19 +70,20 @@ public class VirtualEnvironment {
     for (Route route : listOfRoutes) {
       Point lastNode = route.getLastNode();
       
-      Collection<Point> outGoingNodes = graphRoadModel.get().getGraph()
-          .getOutgoingConnections(lastNode);
-      
-      for (Point node : outGoingNodes) {
-        Route newRoute = (Route) route.clone();
-        newRoute.addNextNode(node);
-        newListOfRoutes.add(newRoute);
+      if (!lastNode.equals(goal)) {
+        Collection<Point> outGoingNodes = graphRoadModel.get().getGraph()
+            .getOutgoingConnections(lastNode);
+
+        for (Point node : outGoingNodes) {
+          if (!route.getRoute().contains(node)) {
+            Route newRoute = (Route) route.clone();
+            newRoute.addNextNode(node);
+            newListOfRoutes.add(newRoute);
+          }
+        }
+      } else {
+        newListOfRoutes.add(route);
       }
-      
-      Route newRoute = (Route) route.clone();
-      newRoute.addNextNode(lastNode);
-      newListOfRoutes.add(newRoute);
-      newListOfRoutes.add(route);
     }
     
     return explore(newListOfRoutes, goal, length + 1, maxLength);

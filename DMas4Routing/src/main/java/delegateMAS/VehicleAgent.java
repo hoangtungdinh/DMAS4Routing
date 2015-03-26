@@ -66,7 +66,7 @@ class VehicleAgent implements TickListener, MovingRoadUser {
 //    destination = Optional.of(new Point(12.0, 12.0));
     
     List<Route> routes = virtualEnvironment.explore(roadModel.get()
-        .getPosition(this), destination.get(), 10);
+        .getPosition(this), destination.get(), 20);
     
     Route bestRoute = null;
     int length = 999;
