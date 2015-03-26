@@ -15,7 +15,7 @@ import com.google.common.base.Optional;
 
 public class AGVAgent extends Vehicle implements CommUser {
 
-  private static final double SPEED = 1000d;
+  private static final double SPEED = 1000d; 
   Optional<RoadModel> roadModel;
   Optional<PDPModel> pdpModel;
   Optional<CommDevice> device;
