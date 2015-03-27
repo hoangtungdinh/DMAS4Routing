@@ -77,6 +77,13 @@ public class VirtualEnvironment {
       if (!lastNode.equals(goal)) {
         Collection<Point> outGoingNodes = graphRoadModel.get().getGraph()
             .getOutgoingConnections(lastNode);
+        
+        // add duplicate point: for example A B C C
+        if (getEuclideanDistance(lastNode, goal) < maxLength) {
+          Route duplicateRoute = route.clone();
+          duplicateRoute.addNextNode(lastNode);
+          newListOfRoutes.add(duplicateRoute);
+        }
 
         for (Point node : outGoingNodes) {
           
