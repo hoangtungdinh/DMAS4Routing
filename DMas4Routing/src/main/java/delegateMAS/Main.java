@@ -74,7 +74,7 @@ public final class Main {
   static ListenableGraph<LengthData> createGraph() {
     final Graph<LengthData> g = new TableGraph<>();
 
-    final Table<Integer, Integer, Point> matrix = createMatrix(4, 4,
+    final Table<Integer, Integer, Point> matrix = createMatrix(20, 20,
         new Point(0, 0));
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
       Graphs.addBiPath(g, column.values());
