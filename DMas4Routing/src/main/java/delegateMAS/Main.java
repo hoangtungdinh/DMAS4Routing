@@ -43,7 +43,7 @@ public final class Main {
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
         (GraphRoadModel) collisionGraphRoadModel);
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
       sim.register(new VehicleAgent(sim.getRandomGenerator(), virtualEnvironment));
     }
 
@@ -73,8 +73,8 @@ public final class Main {
 
   static ListenableGraph<LengthData> createGraph() {
     final Graph<LengthData> g = new TableGraph<>();
-
-    final Table<Integer, Integer, Point> matrix = createMatrix(20, 20,
+    
+    final Table<Integer, Integer, Point> matrix = createMatrix(4, 4,
         new Point(0, 0));
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
       Graphs.addBiPath(g, column.values());

@@ -16,8 +16,10 @@ package delegateMAS;
  * limitations under the License.
  */
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -26,8 +28,13 @@ import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
 import com.github.rinde.rinsim.core.model.road.MovingRoadUser;
 import com.github.rinde.rinsim.core.model.road.RoadModel;
+import com.github.rinde.rinsim.geom.ConnectionData;
+import com.github.rinde.rinsim.geom.Graph;
+import com.github.rinde.rinsim.geom.Graphs;
+import com.github.rinde.rinsim.geom.PathNotFoundException;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
+import com.rits.cloning.Cloner;
 
 class VehicleAgent implements TickListener, MovingRoadUser {
   private final RandomGenerator rng;
@@ -35,6 +42,7 @@ class VehicleAgent implements TickListener, MovingRoadUser {
   private Optional<Point> destination;
   private LinkedList<Point> path;
   private VirtualEnvironment virtualEnvironment;
+  private Graph<? extends ConnectionData> graph;
 
   VehicleAgent(RandomGenerator r, VirtualEnvironment virtualEnvironment) {
     rng = r;
@@ -52,32 +60,24 @@ class VehicleAgent implements TickListener, MovingRoadUser {
       p = model.getRandomPosition(rng);
     } while (roadModel.get().isOccupied(p));
     roadModel.get().addObjectAt(this, p);
-
+    graph = (new Cloner()).deepClone(roadModel.get().getGraph());
   }
 
   @Override
   public double getSpeed() {
-    return 4.0;
+    return 1;
   }
 
   void nextDestination() {
     destination = Optional.of(roadModel.get().getRandomPosition(rng));
-    
-//    destination = Optional.of(new Point(36.0, 36.0));
-    
-    List<Route> routes = virtualEnvironment.explore(roadModel.get()
-        .getPosition(this), destination.get(), 160);
-    
-    Route bestRoute = null;
-    int length = 999;
-    for (Route route : routes) {
-      if (route.getRoute().size() < length) {
-        bestRoute = route;
-        length = route.getRoute().size();
-      }
-    }
 
-    path = new LinkedList<>(bestRoute.getRoute());
+    Point currentPos = roadModel.get().getPosition(this);
+    
+    List<Route> routeList = getKRoutes(10, currentPos, destination.get());
+
+    path = new LinkedList<>(routeList.get(0).getRoute());
+    
+//    virtualEnvironment.book(this.hashCode(), path);
   }
 
   @Override
@@ -85,15 +85,54 @@ class VehicleAgent implements TickListener, MovingRoadUser {
     if (!destination.isPresent()) {
       nextDestination();
     }
-
+    
     roadModel.get().followPath(this, path, timeLapse);
-
+    
     if (roadModel.get().getPosition(this).equals(destination.get())) {
       nextDestination();
     }
+
   }
 
   @Override
   public void afterTick(TimeLapse timeLapse) {}
+  
+  /**
+   * Gets maximum k routes from start to goal
+   *
+   * @param k the k
+   * @param start the start
+   * @param goal the goal
+   * @return the k routes
+   */
+  public List<Route> getKRoutes(int k, Point start, Point goal) {
+    List<Route> routeList = new ArrayList<Route>();
+    Random random = new Random();
+    
+    List<DirectlyConnectedPoints> tmpPoints = new ArrayList<>();
+    
+    // find k routes by remove one random connection between founded route and execute A* again
+    for (int i = 0; i < k; i++) {
+      try {
+        List<Point> route = Graphs.shortestPathEuclideanDistance(graph, start, goal);
+        routeList.add(new Route(route));
+        int index = random.nextInt(route.size() - 1);
+        Point p1 = route.get(index);
+        Point p2 = route.get(index + 1);
+        tmpPoints.add(new DirectlyConnectedPoints(p1, p2));
+        graph.removeConnection(p1, p2);
+        graph.removeConnection(p2, p1);
+      } catch (Exception e) {
+        break;
+      }
+    }
+    
+    for (DirectlyConnectedPoints points : tmpPoints) {
+      graph.addConnection(points.getPoint1(), points.getPoint2());
+      graph.addConnection(points.getPoint2(), points.getPoint1());
+    }
+    
+    return routeList;
+  }
 
 }

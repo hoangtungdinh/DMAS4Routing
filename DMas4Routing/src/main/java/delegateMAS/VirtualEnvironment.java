@@ -2,16 +2,21 @@ package delegateMAS;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
+import com.github.rinde.rinsim.core.TickListener;
+import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.GraphRoadModel;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 
-public class VirtualEnvironment {
+public class VirtualEnvironment implements TickListener {
   
   /** The graph road model. */
   Optional<GraphRoadModel> graphRoadModel;
+  
+  private Infrastructure infrastructure;
   
   /**
    * Instantiates a new virtual environment.
@@ -20,6 +25,7 @@ public class VirtualEnvironment {
    */
   public VirtualEnvironment(GraphRoadModel graphRoadModel) {
     this.graphRoadModel = Optional.of(graphRoadModel);
+    this.infrastructure = new Infrastructure(graphRoadModel);
   }
   
   /**
@@ -32,15 +38,16 @@ public class VirtualEnvironment {
    * @param maxLength the max length
    * @return the list of all possible routes
    */
-  public List<Route> explore(Point start, Point goal, int maxLength) {
+  public List<Route> explore(int agentID, Point start, Point goal, int maxLength) {
     Route route = new Route();
     route.addNextNode(start);
+    
     List<Route> listOfRoutes = new ArrayList<Route>();
     listOfRoutes.add(route);
     List<Point> listOfReachedPoints = new ArrayList<Point>();
     listOfReachedPoints.add(start);
 
-    List<Route> listOfAllRoutes = explore(listOfRoutes, listOfReachedPoints,
+    List<Route> listOfAllRoutes = explore(agentID, listOfRoutes, listOfReachedPoints,
         goal, maxLength);
     List<Route> listOfLegalRoutes = new ArrayList<Route>();
 
@@ -62,7 +69,7 @@ public class VirtualEnvironment {
    * @param maxLength the max length
    * @return the list of routes
    */
-  public List<Route> explore(List<Route> listOfRoutes,
+  public List<Route> explore(int agentID, List<Route> listOfRoutes,
       List<Point> listOfReachedPoints, Point goal, double maxLength) {
     
     if (maxLength <= 0) {
@@ -77,18 +84,12 @@ public class VirtualEnvironment {
       if (!lastNode.equals(goal)) {
         Collection<Point> outGoingNodes = graphRoadModel.get().getGraph()
             .getOutgoingConnections(lastNode);
-        
-        // add duplicate point: for example A B C C
-        if (getEuclideanDistance(lastNode, goal) < maxLength) {
-          Route duplicateRoute = route.clone();
-          duplicateRoute.addNextNode(lastNode);
-          newListOfRoutes.add(duplicateRoute);
-        }
 
         for (Point node : outGoingNodes) {
-          
           if (!listOfReachedPoints.contains(node)
-              && getEuclideanDistance(node, goal) <= maxLength) {
+              && Point.distance(node, goal) <= maxLength
+              && infrastructure.isAvailable(agentID, lastNode, node, route
+                  .getRoute().size())) {
             Route newRoute = (Route) route.clone();
             newRoute.addNextNode(node);
             newListOfRoutes.add(newRoute);
@@ -102,18 +103,32 @@ public class VirtualEnvironment {
       }
     }
     
-    return explore(newListOfRoutes, listOfReachedPoints, goal, maxLength - 4.0);
+    return explore(agentID, newListOfRoutes, listOfReachedPoints, goal, maxLength - 4.0);
   }
   
   /**
-   * Gets the euclidean distance.
+   * Intention ant books a route.
    *
-   * @param p1 the p1
-   * @param p2 the p2
-   * @return the euclidean distance
+   * @param agentID the agent id
+   * @param path the path
+   * @return true, if successful
    */
-  public double getEuclideanDistance(Point p1, Point p2) {
-    return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y)
-        * (p1.y - p2.y));
+  public boolean book(int agentID, LinkedList<Point> path) {
+    return infrastructure.book(agentID, path);
   }
+  
+  /**
+   * Refresh.
+   */
+  public void refresh() {
+    infrastructure.refresh();
+  }
+
+  @Override
+  public void tick(TimeLapse timeLapse) {
+    refresh();
+  }
+
+  @Override
+  public void afterTick(TimeLapse timeLapse) {}
 }
