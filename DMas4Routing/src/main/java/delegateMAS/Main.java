@@ -53,7 +53,7 @@ public final class Main {
             .setMargin(VEHICLE_LENGTH).showNodes().showNodeOccupancy()
         )
         .with(AGVRenderer.builder()
-            .useDifferentColorsForVehicles().showVehicleOrigin()
+            .useDifferentColorsForVehicles().showVehicleOrigin().showVehicleCreationNumber()
         )
         .show();
   }

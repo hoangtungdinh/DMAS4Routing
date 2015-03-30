@@ -9,8 +9,8 @@ import org.joda.time.Interval;
 
 public class EdgeAgent {
 
-  public static final int EVAPORATION_RATE = 8;
-  public static final long GUARD_INTERVAL = 500; // ms
+  public static final int EVAPORATION_RATE = 10;
+  public static final long GUARD_INTERVAL = 2000; // ms
   private List<Reservation> reservations;
   private double edgeLength;
   

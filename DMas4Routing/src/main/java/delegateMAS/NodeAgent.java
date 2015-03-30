@@ -7,8 +7,8 @@ import java.util.List;
 import org.joda.time.Interval;
 
 public class NodeAgent {
-  public static final int EVAPORATION_RATE = 8;
-  public static final long GUARD_INTERVAL = 200; // ms
+  public static final int EVAPORATION_RATE = 10;
+  public static final long GUARD_INTERVAL = 2000; // ms
   private List<Reservation> reservations;
   
   public NodeAgent() {

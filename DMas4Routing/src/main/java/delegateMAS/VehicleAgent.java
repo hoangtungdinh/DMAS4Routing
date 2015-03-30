@@ -26,6 +26,7 @@ import org.apache.commons.math3.random.RandomGenerator;
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
+import com.github.rinde.rinsim.core.model.road.DeadlockException;
 import com.github.rinde.rinsim.core.model.road.MovingRoadUser;
 import com.github.rinde.rinsim.core.model.road.RoadModel;
 import com.github.rinde.rinsim.geom.ConnectionData;
@@ -42,6 +43,8 @@ class VehicleAgent implements TickListener, MovingRoadUser {
   private LinkedList<Point> path;
   private VirtualEnvironment virtualEnvironment;
   private Graph<? extends ConnectionData> graph;
+  private int count = 0;
+  private boolean deadlock = false;
 
   VehicleAgent(RandomGenerator r, VirtualEnvironment virtualEnvironment) {
     rng = r;
@@ -70,13 +73,13 @@ class VehicleAgent implements TickListener, MovingRoadUser {
 
   void nextDestination() {
     destination = Optional.of(roadModel.get().getRandomPosition(rng));
-    Route bestRoute = explore();
-    makeReservation(bestRoute);
+    
+    Route bestRoute = explore(roadModel.get().getPosition(this));
+    makeReservation(bestRoute, roadModel.get().getPosition(this));
   }
   
-  public Route explore() {
-    Point currentPos = roadModel.get().getPosition(this);
-    List<Route> routeList = getKRoutes(10, currentPos, destination.get());
+  public Route explore(Point start) {
+    List<Route> routeList = getKRoutes(10, start, destination.get());
     
     Route bestRoute = null;
     long time = Long.MAX_VALUE;
@@ -94,13 +97,12 @@ class VehicleAgent implements TickListener, MovingRoadUser {
     return bestRoute;
   }
   
-  public void makeReservation(Route bestRoute) {
-    Point currentPosition = roadModel.get().getPosition(this);
+  public void makeReservation(Route bestRoute, Point start) {
     double speedMs = this.getSpeed() / 3600;
     
     if (bestRoute == null) {
       List<Point> tmpPath = new ArrayList<Point>();
-      tmpPath.add(currentPosition);
+      tmpPath.add(start);
       virtualEnvironment.makeReservation(this.hashCode(), tmpPath, speedMs);
       path = new LinkedList<>(tmpPath);
     } else {
@@ -109,7 +111,7 @@ class VehicleAgent implements TickListener, MovingRoadUser {
         path = new LinkedList<>(bestRoute.getRoute());
       } else {
         List<Point> tmpPath = new ArrayList<Point>();
-        tmpPath.add(currentPosition);
+        tmpPath.add(start);
         path = new LinkedList<>(tmpPath);
       }
     }
@@ -123,17 +125,56 @@ class VehicleAgent implements TickListener, MovingRoadUser {
     
     Point currentPosition = roadModel.get().getPosition(this);
     if ((currentPosition.x % 4) == 0 && (currentPosition.y % 4) == 0) {
-      Route bestRoute = explore();
-      makeReservation(bestRoute);
+      if (!deadlock) {
+        Route bestRoute = explore(currentPosition);
+        makeReservation(bestRoute, roadModel.get().getPosition(this));
+      }
+    } else {
+      if (deadlock) {
+        List<Point> tmpPath = new ArrayList<Point>();
+        tmpPath.add(roadModel.get().getPosition(this));
+        path = new LinkedList<>(tmpPath);
+      }
     }
     
 //    virtualEnvironment.printCurrentTime();
     
-    roadModel.get().followPath(this, path, timeLapse);
-    System.out.println(roadModel.get().getPosition(this));
+    System.out
+    .println(count + " " + this.hashCode() + " -- "
+        + roadModel.get().getPosition(this) + " -- "
+        + this.destination.get() + " -- " + path);
+    
+    try {
+      roadModel.get().followPath(this, path, timeLapse);
+      deadlock = false;
+    } catch (DeadlockException e) {
+      Point pos = roadModel.get().getPosition(this);
+      if ((pos.x % 4) == 0 && (pos.y % 4) == 0) {
+        System.out.println("--------------- " + path);
+        Point p1 = pos;
+        Point p2 = path.get(0);
+        System.out.println(p1 + " " + p2);
+        graph.removeConnection(p1, p2);
+        graph.removeConnection(p2, p1);
+        Route bestRoute = explore(pos);
+        makeReservation(bestRoute, pos);
+        graph.addConnection(p1, p2);
+        graph.addConnection(p2, p1);
+        deadlock = true;
+      } else {
+        deadlock = true;
+        System.out.println("##############################################");
+      }
+    }
+    
+    System.out
+    .println(count + " " + this.hashCode() + " -- "
+        + roadModel.get().getPosition(this) + " -- "
+        + this.destination.get() + " -- " + path);
     
     if (roadModel.get().getPosition(this).equals(destination.get())) {
       nextDestination();
+      count++;
     }
 
   }
