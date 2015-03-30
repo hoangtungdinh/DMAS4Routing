@@ -31,7 +31,6 @@ import com.github.rinde.rinsim.core.model.road.RoadModel;
 import com.github.rinde.rinsim.geom.ConnectionData;
 import com.github.rinde.rinsim.geom.Graph;
 import com.github.rinde.rinsim.geom.Graphs;
-import com.github.rinde.rinsim.geom.PathNotFoundException;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 import com.rits.cloning.Cloner;
@@ -65,19 +64,55 @@ class VehicleAgent implements TickListener, MovingRoadUser {
 
   @Override
   public double getSpeed() {
-    return 1;
+    // speed in km/h, unit of map is meter
+    return (3.6d*4);
   }
 
   void nextDestination() {
     destination = Optional.of(roadModel.get().getRandomPosition(rng));
-
+    Route bestRoute = explore();
+    makeReservation(bestRoute);
+  }
+  
+  public Route explore() {
     Point currentPos = roadModel.get().getPosition(this);
-    
     List<Route> routeList = getKRoutes(10, currentPos, destination.get());
-
-    path = new LinkedList<>(routeList.get(0).getRoute());
     
-//    virtualEnvironment.book(this.hashCode(), path);
+    Route bestRoute = null;
+    long time = Long.MAX_VALUE;
+    long timeTmp;
+    double speedMs = this.getSpeed() / 3600;
+    
+    for (Route route : routeList) {
+      timeTmp = virtualEnvironment.explore(this.hashCode(), route.getRoute(), speedMs);
+      if (timeTmp != -1 && timeTmp < time) {
+        time = timeTmp;
+        bestRoute = route;
+      }
+    }
+    
+    return bestRoute;
+  }
+  
+  public void makeReservation(Route bestRoute) {
+    Point currentPosition = roadModel.get().getPosition(this);
+    double speedMs = this.getSpeed() / 3600;
+    
+    if (bestRoute == null) {
+      List<Point> tmpPath = new ArrayList<Point>();
+      tmpPath.add(currentPosition);
+      virtualEnvironment.makeReservation(this.hashCode(), tmpPath, speedMs);
+      path = new LinkedList<>(tmpPath);
+    } else {
+      if (virtualEnvironment.makeReservation(this.hashCode(),
+          bestRoute.getRoute(), speedMs)) {
+        path = new LinkedList<>(bestRoute.getRoute());
+      } else {
+        List<Point> tmpPath = new ArrayList<Point>();
+        tmpPath.add(currentPosition);
+        path = new LinkedList<>(tmpPath);
+      }
+    }
   }
 
   @Override
@@ -86,7 +121,16 @@ class VehicleAgent implements TickListener, MovingRoadUser {
       nextDestination();
     }
     
+    Point currentPosition = roadModel.get().getPosition(this);
+    if ((currentPosition.x % 4) == 0 && (currentPosition.y % 4) == 0) {
+      Route bestRoute = explore();
+      makeReservation(bestRoute);
+    }
+    
+//    virtualEnvironment.printCurrentTime();
+    
     roadModel.get().followPath(this, path, timeLapse);
+    System.out.println(roadModel.get().getPosition(this));
     
     if (roadModel.get().getPosition(this).equals(destination.get())) {
       nextDestination();
@@ -131,7 +175,7 @@ class VehicleAgent implements TickListener, MovingRoadUser {
       graph.addConnection(points.getPoint1(), points.getPoint2());
       graph.addConnection(points.getPoint2(), points.getPoint1());
     }
-    
+
     return routeList;
   }
 

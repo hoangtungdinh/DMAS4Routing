@@ -1,13 +1,16 @@
 package delegateMAS;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.GraphRoadModel;
+import com.github.rinde.rinsim.geom.Connection;
+import com.github.rinde.rinsim.geom.ConnectionData;
 import com.github.rinde.rinsim.geom.Point;
 import com.google.common.base.Optional;
 
@@ -15,120 +18,110 @@ public class VirtualEnvironment implements TickListener {
   
   /** The graph road model. */
   Optional<GraphRoadModel> graphRoadModel;
-  
-  private Infrastructure infrastructure;
+  private Simulator simulator;
+  private Map<Connection<? extends ConnectionData>, EdgeAgent> edgeAgents;
+  private Map<Point, NodeAgent> nodeAgents;
   
   /**
    * Instantiates a new virtual environment.
    *
    * @param graphRoadModel the road model
    */
-  public VirtualEnvironment(GraphRoadModel graphRoadModel) {
+  public VirtualEnvironment(GraphRoadModel graphRoadModel, Simulator simulator) {
     this.graphRoadModel = Optional.of(graphRoadModel);
-    this.infrastructure = new Infrastructure(graphRoadModel);
-  }
-  
-  /**
-   * Explore routes between 2 nodes. Ants move and drop pheromone in each node
-   * If ant move to a node that contain pheromone of its ancestor, it will be deleted.
-   * 
-   *
-   * @param start the start
-   * @param goal the goal
-   * @param maxLength the max length
-   * @return the list of all possible routes
-   */
-  public List<Route> explore(int agentID, Point start, Point goal, int maxLength) {
-    Route route = new Route();
-    route.addNextNode(start);
+    this.simulator = simulator;
     
-    List<Route> listOfRoutes = new ArrayList<Route>();
-    listOfRoutes.add(route);
-    List<Point> listOfReachedPoints = new ArrayList<Point>();
-    listOfReachedPoints.add(start);
-
-    List<Route> listOfAllRoutes = explore(agentID, listOfRoutes, listOfReachedPoints,
-        goal, maxLength);
-    List<Route> listOfLegalRoutes = new ArrayList<Route>();
-
-    for (Route oneRoute : listOfAllRoutes) {
-      if (oneRoute.getLastNode().equals(goal)) {
-        listOfLegalRoutes.add(oneRoute);
-      }
+    nodeAgents = new HashMap<Point, NodeAgent>();
+    Set<Point> nodes = graphRoadModel.getGraph().getNodes();
+    for (Point p : nodes) {
+      nodeAgents.put(p, new NodeAgent());
     }
-
-    return listOfLegalRoutes;
+    
+    edgeAgents = new HashMap<Connection<? extends ConnectionData>, EdgeAgent>();
+    for (Connection<? extends ConnectionData> conn : graphRoadModel.getGraph()
+        .getConnections()) {
+       edgeAgents.put(conn, new EdgeAgent(conn.getLength()));
+    }
   }
-  
+
   /**
    * Explore.
    *
-   * @param listOfRoutes the list of current routes
-   * @param goal the goal
-   * @param length the length
-   * @param maxLength the max length
-   * @return the list of routes
+   * @param agentID the agent id
+   * @param path the path
+   * @param speed the speed
+   * @return the estimated arrival time
    */
-  public List<Route> explore(int agentID, List<Route> listOfRoutes,
-      List<Point> listOfReachedPoints, Point goal, double maxLength) {
+  public long explore(int agentID, List<Point> path, double speed) {
+    long time = simulator.getCurrentTime();
+    Point p1;
+    Point p2;
+    Connection<? extends ConnectionData> conn;
     
-    if (maxLength <= 0) {
-      return listOfRoutes;
-    }
-    
-    List<Route> newListOfRoutes = new ArrayList<>();
-
-    for (Route route : listOfRoutes) {
-      Point lastNode = route.getLastNode();
-      
-      if (!lastNode.equals(goal)) {
-        Collection<Point> outGoingNodes = graphRoadModel.get().getGraph()
-            .getOutgoingConnections(lastNode);
-
-        for (Point node : outGoingNodes) {
-          if (!listOfReachedPoints.contains(node)
-              && Point.distance(node, goal) <= maxLength
-              && infrastructure.isAvailable(agentID, lastNode, node, route
-                  .getRoute().size())) {
-            Route newRoute = (Route) route.clone();
-            newRoute.addNextNode(node);
-            newListOfRoutes.add(newRoute);
-            if (!node.equals(goal)) {
-              listOfReachedPoints.add(node);
-            }
-          }
-        }
-      } else {
-        newListOfRoutes.add(route);
+    for (int i = 0; i < path.size() - 1; i++) {
+      p1 = path.get(i);
+      p2 = path.get(i + 1);
+      // TODO solve the problem of one path having 2 connections
+      // only check opposite direction
+      conn = graphRoadModel.get().getGraph().getConnection(p2, p1);
+      time = edgeAgents.get(conn).checkAvailability(agentID, time, speed);
+      if (time == -1 || !nodeAgents.get(p2).checkAvailability(agentID, time)) {
+        return -1;
       }
     }
     
-    return explore(agentID, newListOfRoutes, listOfReachedPoints, goal, maxLength - 4.0);
+    return time;
   }
   
   /**
-   * Intention ant books a route.
+   * Make reservation.
    *
    * @param agentID the agent id
    * @param path the path
-   * @return true, if successful
+   * @param speed the speed
+   * @return true, if make reservation successfully
    */
-  public boolean book(int agentID, LinkedList<Point> path) {
-    return infrastructure.book(agentID, path);
-  }
-  
-  /**
-   * Refresh.
-   */
-  public void refresh() {
-    infrastructure.refresh();
+  public boolean makeReservation(int agentID, List<Point> path, double speed) {
+    long time = simulator.getCurrentTime();
+    Point p1;
+    Point p2;
+    Connection<? extends ConnectionData> conn;
+    
+    if (path.size() == 1) {
+      p1 = path.get(0);
+      return nodeAgents.get(p1).makeReservation(agentID, time);
+    } else {
+      for (int i = 0; i < path.size() - 1; i++) {
+        p1 = path.get(i);
+        p2 = path.get(i + 1);
+        conn = graphRoadModel.get().getGraph().getConnection(p1, p2);
+        time = edgeAgents.get(conn).makeReservation(agentID, time, speed);
+        if (time == -1 || !nodeAgents.get(p2).makeReservation(agentID, time)) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
   }
 
   @Override
   public void tick(TimeLapse timeLapse) {
-    refresh();
   }
 
   @Override
-  public void afterTick(TimeLapse timeLapse) {}
+  public void afterTick(TimeLapse timeLapse) {
+    for (Map.Entry<Point, NodeAgent> entry : nodeAgents.entrySet()) {
+      entry.getValue().refesh();
+    }
+
+    for (Map.Entry<Connection<? extends ConnectionData>, EdgeAgent> entry : edgeAgents
+        .entrySet()) {
+      entry.getValue().refesh();
+    }
+  }
+  
+  public void printCurrentTime() {
+    System.out.println(simulator.getCurrentTime());
+  }
 }

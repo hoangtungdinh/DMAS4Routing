@@ -1,34 +1,38 @@
 package delegateMAS;
 
-import com.github.rinde.rinsim.geom.Point;
+import org.joda.time.Interval;
 
 public class Reservation {
   
-  private Point nextNode;
-  private int duration;
   private int agentID;
+  private Interval interval;
+  private int lifeTime;
   
-  public Reservation(int agentID, Point nextNode, int duration) {
-    this.nextNode = nextNode;
-    this.duration = duration;
+  public Reservation(int agentID, Interval interval) {
     this.agentID = agentID;
-  }
-  
-  public Point getNextNode() {
-    return nextNode;
-  }
-  
-  public void refresh() {
-    if (duration > 0) {
-      duration--;
-    }
-  }
-  
-  public int getDuration() {
-    return duration;
+    this.interval = interval;
+    this.lifeTime = EdgeAgent.EVAPORATION_RATE;
   }
   
   public int getAgentID() {
     return agentID;
+  }
+  
+  public Interval getInterval() {
+    return interval;
+  }
+  
+  public boolean overlap(int agtID, Interval intv) {
+    return interval.overlaps(intv) && agtID != agentID;
+  }
+  
+  public int getLifeTime() {
+    return lifeTime;
+  }
+  
+  public void refesh() {
+    if (lifeTime > 0) {
+      lifeTime--;
+    }
   }
 }

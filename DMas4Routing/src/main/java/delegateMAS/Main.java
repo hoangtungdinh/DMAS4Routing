@@ -41,9 +41,10 @@ public final class Main {
         .build();
     
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
-        (GraphRoadModel) collisionGraphRoadModel);
+        (GraphRoadModel) collisionGraphRoadModel, sim);
+    sim.addTickListener(virtualEnvironment);
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 2; i++) {
       sim.register(new VehicleAgent(sim.getRandomGenerator(), virtualEnvironment));
     }
 
