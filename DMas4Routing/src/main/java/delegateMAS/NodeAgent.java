@@ -1,14 +1,15 @@
 package delegateMAS;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import org.joda.time.Interval;
 
 public class NodeAgent {
-  public static final int EVAPORATION_RATE = 10;
-  public static final long GUARD_INTERVAL = 2000; // ms
+  public static final int EVAPORATION_RATE = 5;
+  public static final long GUARD_INTERVAL = 200; // ms
   private List<Reservation> reservations;
   
   public NodeAgent() {
@@ -51,6 +52,7 @@ public class NodeAgent {
       return false;
     } else {
       reservations.add(new Reservation(agentID, interval));
+      sort();
       return true;
     }
   }
@@ -68,5 +70,28 @@ public class NodeAgent {
         iterator.remove();
       }
     }
+  }
+
+  public void sort() {
+    Collections.sort(reservations, new ReservationStartComparator());
+  }
+
+  public FreeTimeIntervals getFreeTimeIntervals(int agentID,
+      Interval searchInterval) {
+    FreeIntervalFinder finder = new FreeIntervalFinder();
+    List<Interval> existingIntervals = new ArrayList<Interval>();
+    for (Reservation reservation : reservations) {
+      if (reservation.getAgentID() != agentID) {
+        existingIntervals.add(reservation.getInterval());
+      }
+    }
+
+    long minimumTravelTime = (long) ((VehicleAgent.LENGTH + VehicleAgent.MIN_DISTANCE * 2) * 3600 / VehicleAgent.SPEED);
+    minimumTravelTime += GUARD_INTERVAL;
+
+    FreeTimeIntervals freeTimeIntervals = new FreeTimeIntervals(
+        finder.findGaps(existingIntervals, searchInterval), minimumTravelTime,
+        0);
+    return freeTimeIntervals;
   }
 }

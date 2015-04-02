@@ -17,14 +17,12 @@ import com.github.rinde.rinsim.ui.renderers.WarehouseRenderer;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 
-/**
- * Example showcasing the {@link CollisionGraphRoadModel} with an
- * {@link WarehouseRenderer} and {@link AGVRenderer}.
- * @author Rinde van Lon
- */
 public final class Main {
 
   private static final double VEHICLE_LENGTH = 2d;
+  private static final int MAP_SIZE_X = 4;
+  private static final int MAP_SIZE_Y = 4;
+  private static final int NUM_AGENTS = 3;
 
   private Main() {}
 
@@ -44,8 +42,9 @@ public final class Main {
         (GraphRoadModel) collisionGraphRoadModel, sim);
     sim.addTickListener(virtualEnvironment);
 
-    for (int i = 0; i < 2; i++) {
-      sim.register(new VehicleAgent(sim.getRandomGenerator(), virtualEnvironment));
+    for (int i = 0; i < NUM_AGENTS; i++) {
+      sim.register(new VehicleAgent(sim.getRandomGenerator(),
+          virtualEnvironment, createInitialBeliefAboutGraph()));
     }
 
     View.create(sim)
@@ -71,11 +70,25 @@ public final class Main {
     }
     return builder.build();
   }
+  
+  static Graph<LengthData> createInitialBeliefAboutGraph() {
+    final Graph<LengthData> g = new TableGraph<>();
+    
+    final Table<Integer, Integer, Point> matrix = createMatrix(MAP_SIZE_X, MAP_SIZE_Y,
+        new Point(0, 0));
+    for (final Map<Integer, Point> column : matrix.columnMap().values()) {
+      Graphs.addBiPath(g, column.values());
+    }
+    for (final Map<Integer, Point> row : matrix.rowMap().values()) {
+      Graphs.addBiPath(g, row.values());
+    }
+    return g;
+  }
 
   static ListenableGraph<LengthData> createGraph() {
     final Graph<LengthData> g = new TableGraph<>();
     
-    final Table<Integer, Integer, Point> matrix = createMatrix(4, 4,
+    final Table<Integer, Integer, Point> matrix = createMatrix(MAP_SIZE_X, MAP_SIZE_Y,
         new Point(0, 0));
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
       Graphs.addBiPath(g, column.values());

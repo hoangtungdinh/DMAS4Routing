@@ -52,7 +52,7 @@ public class VirtualEnvironment implements TickListener {
    * @param speed the speed
    * @return the estimated arrival time
    */
-  public long explore(int agentID, List<Point> path, double speed) {
+  public ExplorationInfo explore(int agentID, List<Point> path, double speed) {
     long time = simulator.getCurrentTime();
     Point p1;
     Point p2;
@@ -61,16 +61,14 @@ public class VirtualEnvironment implements TickListener {
     for (int i = 0; i < path.size() - 1; i++) {
       p1 = path.get(i);
       p2 = path.get(i + 1);
-      // TODO solve the problem of one path having 2 connections
-      // only check opposite direction
       conn = graphRoadModel.get().getGraph().getConnection(p2, p1);
       time = edgeAgents.get(conn).checkAvailability(agentID, time, speed);
       if (time == -1 || !nodeAgents.get(p2).checkAvailability(agentID, time)) {
-        return -1;
+        return new ExplorationInfo(path.subList(0, i), Point.distance(p1, path.get(path.size() - 1)));
       }
     }
     
-    return time;
+    return new ExplorationInfo(path, 0);
   }
   
   /**

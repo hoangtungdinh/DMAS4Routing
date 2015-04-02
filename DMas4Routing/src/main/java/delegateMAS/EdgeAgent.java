@@ -1,6 +1,7 @@
 package delegateMAS;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -9,8 +10,8 @@ import org.joda.time.Interval;
 
 public class EdgeAgent {
 
-  public static final int EVAPORATION_RATE = 10;
-  public static final long GUARD_INTERVAL = 2000; // ms
+  public static final int EVAPORATION_RATE = 5;
+  public static final long GUARD_INTERVAL = 200; // ms
   private List<Reservation> reservations;
   private double edgeLength;
   
@@ -64,6 +65,7 @@ public class EdgeAgent {
       return -1;
     } else {
       reservations.add(new Reservation(agentID, interval));
+      sort();
       return startTime + stayingTime;
     }
   }
@@ -81,5 +83,38 @@ public class EdgeAgent {
         iterator.remove();
       }
     }
+  }
+  
+  public void sort() {
+    Collections.sort(reservations, new ReservationStartComparator());
+  }
+  
+  /**
+   * Gets the free time intervals from an edge agent
+   * Not take into account the reservation booked by the current vehicle agent
+   *
+   * @param agentID the agent id
+   * @param searchInterval the search interval
+   * @return the free time intervals
+   */
+  public FreeTimeIntervals getFreeTimeIntervals(int agentID,
+      Interval searchInterval) {
+    FreeIntervalFinder finder = new FreeIntervalFinder();
+    List<Interval> existingIntervals = new ArrayList<Interval>();
+    for (Reservation reservation : reservations) {
+      if (reservation.getAgentID() != agentID) {
+        existingIntervals.add(reservation.getInterval());
+      }
+    }
+
+    long minimumTravelTime = (long) ((edgeLength + VehicleAgent.LENGTH + VehicleAgent.MIN_DISTANCE * 2) * 3600 / VehicleAgent.SPEED);
+    minimumTravelTime += GUARD_INTERVAL;
+
+    long estimatedStartingDepartureTime = (long) (edgeLength * 3600 / VehicleAgent.SPEED);
+
+    FreeTimeIntervals freeTimeIntervals = new FreeTimeIntervals(
+        finder.findGaps(existingIntervals, searchInterval), minimumTravelTime,
+        estimatedStartingDepartureTime);
+    return freeTimeIntervals;
   }
 }

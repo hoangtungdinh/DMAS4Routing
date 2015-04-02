@@ -2,7 +2,7 @@ package delegateMAS;
 
 import org.joda.time.Interval;
 
-public class Reservation {
+public class Reservation implements Comparable<Reservation> {
   
   private int agentID;
   private Interval interval;
@@ -35,4 +35,17 @@ public class Reservation {
       lifeTime--;
     }
   }
+
+  @Override
+  public int compareTo(Reservation o) {
+    long comp = interval.getStartMillis() - o.getInterval().getStartMillis();
+    if (comp > 0) {
+      return 1;
+    } else if (comp < 0) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+
 }
