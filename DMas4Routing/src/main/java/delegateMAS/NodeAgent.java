@@ -9,7 +9,7 @@ import org.joda.time.Interval;
 
 public class NodeAgent {
   public static final int EVAPORATION_RATE = 5;
-  public static final long GUARD_INTERVAL = 200; // ms
+  public static final long GUARD_INTERVAL = 500; // ms
   private List<Reservation> reservations;
   
   public NodeAgent() {
@@ -86,12 +86,10 @@ public class NodeAgent {
       }
     }
 
-    long minimumTravelTime = (long) ((VehicleAgent.LENGTH + VehicleAgent.MIN_DISTANCE * 2) * 3600 / VehicleAgent.SPEED);
-    minimumTravelTime += GUARD_INTERVAL;
+    final long travelTime = 0;
 
     FreeTimeIntervals freeTimeIntervals = new FreeTimeIntervals(
-        finder.findGaps(existingIntervals, searchInterval), minimumTravelTime,
-        0);
+        finder.findGaps(existingIntervals, searchInterval), travelTime, GUARD_INTERVAL);
     return freeTimeIntervals;
   }
 }

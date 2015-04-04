@@ -11,7 +11,7 @@ import org.joda.time.Interval;
 public class EdgeAgent {
 
   public static final int EVAPORATION_RATE = 5;
-  public static final long GUARD_INTERVAL = 200; // ms
+  public static final long GUARD_INTERVAL = 500; // ms
   private List<Reservation> reservations;
   private double edgeLength;
   
@@ -107,14 +107,11 @@ public class EdgeAgent {
       }
     }
 
-    long minimumTravelTime = (long) ((edgeLength + VehicleAgent.LENGTH + VehicleAgent.MIN_DISTANCE * 2) * 3600 / VehicleAgent.SPEED);
-    minimumTravelTime += GUARD_INTERVAL;
-
-    long estimatedStartingDepartureTime = (long) (edgeLength * 3600 / VehicleAgent.SPEED);
+    final long travelTime = (long) (edgeLength * 3600 / VehicleAgent.SPEED);
 
     FreeTimeIntervals freeTimeIntervals = new FreeTimeIntervals(
-        finder.findGaps(existingIntervals, searchInterval), minimumTravelTime,
-        estimatedStartingDepartureTime);
+        finder.findGaps(existingIntervals, searchInterval), travelTime,
+        GUARD_INTERVAL);
     return freeTimeIntervals;
   }
 }
