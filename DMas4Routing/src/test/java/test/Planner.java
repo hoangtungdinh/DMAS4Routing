@@ -14,15 +14,16 @@ public class Planner {
   // Input is list of possible free time interval
   // Output: list of resource entry time (equal to number of resource)
   
-  public List<Interval> makeSchedule(List<FreeTimeIntervals> intervals, Interval startTime) {
-    List<Interval> startList = new ArrayList<Interval>();
-    startList.add(startTime);
+  public List<Plan> makeSchedule(List<FreeTimeIntervals> intervals, Interval startTime) {
+    List<Plan> startList = new ArrayList<Plan>();
+    ArrayList<Long> plan = new ArrayList<Long>();
+    startList.add(new Plan(startTime, plan));
     
-    List<Interval> exitList = new ArrayList<Interval>();
+    List<Plan> exitList = new ArrayList<Plan>();
     
     for (FreeTimeIntervals freeTimeIntervals : intervals) {
-      for (Interval start : startList) {
-        final List<Interval> end = freeTimeIntervals.getExitIntervals(start);
+      for (Plan start : startList) {
+        final List<Plan> end = freeTimeIntervals.getExitPlans(start);
         exitList.addAll(end);
       }
       startList.clear();

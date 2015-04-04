@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.joda.time.Interval;
 
+import test.Plan;
+
 public class FreeTimeIntervals {
 
   private List<Interval> intervals;
@@ -36,24 +38,32 @@ public class FreeTimeIntervals {
    * @param entryInterval the entry interval
    * @return the exit intervals
    */
-  public List<Interval> getExitIntervals(Interval entryInterval) {
-    List<Interval> exitIntervals = new ArrayList<Interval>();
+  @SuppressWarnings("unchecked")
+  public List<Plan> getExitPlans(Plan entryPlan) {
+    List<Plan> exitPlans = new ArrayList<Plan>();
     
     for (Interval interval : intervals) {
       if (interval.toDurationMillis() >= travelTime + 2 * guardInterval) {
-        final Interval avaiEntryInterval = new Interval(interval.getStartMillis()
-            + guardInterval, interval.getEndMillis() - guardInterval - travelTime);
-        
-        final Interval overlap = avaiEntryInterval.overlap(entryInterval);
-        
+        final Interval avaiEntryInterval = new Interval(
+            interval.getStartMillis() + guardInterval, interval.getEndMillis()
+                - guardInterval - travelTime);
+
+        final Interval overlap = avaiEntryInterval.overlap(entryPlan
+            .getInterval());
+
         if (overlap != null) {
           final long startExitInterval = overlap.getStartMillis() + travelTime;
-          final Interval exitInterval = new Interval(startExitInterval, interval.getEndMillis() - guardInterval);
-          exitIntervals.add(exitInterval);
+          final Interval exitInterval = new Interval(startExitInterval,
+              interval.getEndMillis() - guardInterval);
+          ArrayList<Long> startTimes = (ArrayList<Long>) entryPlan
+              .getStartTime().clone();
+          startTimes.add(overlap.getStartMillis());
+
+          exitPlans.add(new Plan(exitInterval, startTimes));
         }
       }
     }
-    
-    return exitIntervals;
+
+    return exitPlans;
   }
 }
