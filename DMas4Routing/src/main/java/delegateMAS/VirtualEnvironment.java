@@ -56,10 +56,20 @@ public class VirtualEnvironment implements TickListener {
     }    
   }
   
-  // TODO check correctness here
+  /**
+   * Explore and find the fastest way from start to goal
+   *
+   * @param agentID the agent id
+   * @param start the start
+   * @param goal the goal
+   * @param currentTime the current time
+   * @param deadline the deadline
+   * @return the array list
+   */
   public ArrayList<Point> explore(int agentID, Point start, Point goal, long currentTime,
       long deadline) {
     List<Route> routeList = new ArrayList<Route>();
+    // first route contains only start point
     ArrayList<Point> firstRoute = new ArrayList<Point>();
     firstRoute.add(start);
     routeList.add(new Route(firstRoute));
@@ -67,15 +77,20 @@ public class VirtualEnvironment implements TickListener {
     long time = currentTime;
 
     while (time < deadline) {
+      // explore until reaching deadline
       time += 1000;
+      final int maxLength = (int) (deadline - time) / 1000;
+      // list of visited nodes in the current time step
       final List<Point> visitedNodes = new ArrayList<Point>();
       final ArrayList<Route> tmpRouteList = new ArrayList<Route>();
       for (Route route : routeList) {
         final Point lastNode = route.getLastNode();
-        final int maxLength = (int) (deadline - time) / 1000;
         // check if staying at same node is possible
+        // first check if investigated node is visited in this time step
         if (!visitedNodes.contains(lastNode)) {
           visitedNodes.add(lastNode);
+          // check if it is enough time to go from this node to goal
+          // and if it is available in this time step (no reservation yet)
           if (getShortestDistance(lastNode, goal) < maxLength
               && nodeAgents.get(lastNode).isAvailable(agentID, time)) {
             final ArrayList<Point> newRoute = route.getRoute();
@@ -93,25 +108,39 @@ public class VirtualEnvironment implements TickListener {
         final Collection<Point> outgoingNodes = graphRoadModel.get().getGraph()
             .getOutgoingConnections(lastNode);
         for (Point nextNode : outgoingNodes) {
-          // check if node is already visited in this step and do not allow
-          // cycle
+          // check if node is already visited in this step 
+          // and do not allow cycle
           if (!visitedNodes.contains(nextNode) && !route.contains(nextNode)) {
-            visitedNodes.add(nextNode);
-            if (getShortestDistance(lastNode, nextNode) < maxLength) {
+            // check if it is still possible to go from this node to goal
+            if (getShortestDistance(nextNode, goal) < maxLength) {
               final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-              final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
-                  .get().getGraph().getConnection(lastNode, nextNode));
-              if (nodeAgent.isAvailable(agentID, time)
-                  && edgeAgent.isAvailable(agentID, time)) {
-                final ArrayList<Point> newRoute = route.getRoute();
-                newRoute.add(nextNode);
-                if (nextNode.equals(goal)) {
-                  // if reached goal then return
-                  return newRoute;
-                } else {
-                  tmpRouteList.add(new Route(newRoute));
+              // check if next node is available in this time step
+              if (nodeAgent.isAvailable(agentID, time)) {
+                // if next node is available, check if edge from current node to
+                // next node is available
+                final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
+                    .get().getGraph().getConnection(lastNode, nextNode));
+                if (edgeAgent.isAvailable(agentID, time)) {
+                  // if next node can be reached, add to visited nodes
+                  visitedNodes.add(nextNode);
+                  final ArrayList<Point> newRoute = route.getRoute();
+                  newRoute.add(nextNode);
+                  if (nextNode.equals(goal)) {
+                    // if reached goal then return
+                    return newRoute;
+                  } else {
+                    tmpRouteList.add(new Route(newRoute));
+                  }
                 }
+              } else {
+                // if next node is not available in this time step, mark it as
+                // visited node
+                visitedNodes.add(nextNode);
               }
+            } else {
+              // if not enough time to go from this node to goal, mark it as
+              // visited node
+              visitedNodes.add(nextNode);
             }
           }
         }
