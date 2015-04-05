@@ -20,9 +20,9 @@ import com.google.common.collect.Table;
 public final class Main {
 
   private static final double VEHICLE_LENGTH = 2d;
-  private static final int MAP_SIZE_X = 32;
-  private static final int MAP_SIZE_Y = 32;
-  private static final int NUM_AGENTS = 1;
+  private static final int MAP_SIZE_X = 4;
+  private static final int MAP_SIZE_Y = 4;
+  private static final int NUM_AGENTS = 2;
 
   private Main() {}
 
@@ -75,11 +75,21 @@ public final class Main {
     
     final Table<Integer, Integer, Point> matrix = createMatrix(MAP_SIZE_X, MAP_SIZE_Y,
         new Point(0, 0));
+    
+    int i = 0;
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
-      Graphs.addBiPath(g, column.values());
+      if (i % 1 == 0) {
+        Graphs.addBiPath(g, column.values());
+      }
+      i++;
     }
+    
+    int j = 0;
     for (final Map<Integer, Point> row : matrix.rowMap().values()) {
-      Graphs.addBiPath(g, row.values());
+      if (j % 1 == 0) {
+        Graphs.addBiPath(g, row.values());
+      }
+      j++;
     }
     return g;
   }

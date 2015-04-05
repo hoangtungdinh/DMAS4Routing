@@ -145,13 +145,62 @@ public class VirtualEnvironment implements TickListener {
           }
         }
       }
-      routeList = tmpRouteList;
+      if (tmpRouteList.isEmpty()) {
+        break;
+      } else {
+        routeList = tmpRouteList;
+      }
     }
 
     // if can't reach goal, then return arbitrary route
     final Random randomGenerator = new Random();
     final int index = randomGenerator.nextInt(routeList.size());
     return routeList.get(index).getRoute();
+  }
+  
+  /**
+   * Book resource.
+   *
+   * @param agentID the agent id
+   * @param path the path
+   * @param currentTime the current time
+   * @return true, if book successfully
+   */
+  public boolean bookResource(int agentID, ArrayList<Point> path,
+      long currentTime) {
+    if (path.size() < 2) {
+      return false;
+    }
+    
+    long time = currentTime;
+    
+    for (int index = 0; index < path.size() - 1; index++) {
+      time += 1000;
+      final Point from = path.get(index);
+      final Point to = path.get(index + 1);
+      if (from.equals(to)) {
+        // stay at the same position, only need to book node
+        final ResourceAgent nodeAgent = nodeAgents.get(to);
+        final boolean bookingResponse = nodeAgent.bookResource(agentID, time);
+        // if can't book, return false
+        if (!bookingResponse) {
+          return false;
+        }
+      } else {
+        // move to next node, book both edge and the next node
+        final ResourceAgent nodeAgent = nodeAgents.get(to);
+        final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel.get()
+            .getGraph().getConnection(from, to));
+        final boolean nodeResponse = nodeAgent.bookResource(agentID, time);
+        final boolean edgeResponse = edgeAgent.bookResource(agentID, time);
+        // if can't book node or edge, return false
+        if (!nodeResponse || !edgeResponse) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
   }
   
   /**

@@ -63,12 +63,17 @@ class AGV implements TickListener, MovingRoadUser {
   void nextDestination(TimeLapse timeLapse) {
     destination = Optional.of(roadModel.get().getRandomPosition(rng));
     
-//    path = new LinkedList<>(roadModel.get().getShortestPathTo(this,
-//        destination.get()));
     final ArrayList<Point> exploredPath = virtualEnvironment.explore(
         this.hashCode(), roadModel.get().getPosition(this), destination.get(),
         timeLapse.getStartTime(), timeLapse.getStartTime() + 100000);
     
+    final boolean bookingResponse = virtualEnvironment.bookResource(
+        this.hashCode(), exploredPath, timeLapse.getStartTime());
+    
+//    if (!bookingResponse) {
+//      System.out.println("aaaaaa");
+//    }
+
     path = new LinkedList<>(exploredPath);
     path.removeFirst();
   }
@@ -79,11 +84,13 @@ class AGV implements TickListener, MovingRoadUser {
       nextDestination(timeLapse);
     }
     
+    System.out.println(this.hashCode() + ": " + path);
     roadModel.get().moveTo(this, path.getFirst(), timeLapse);
     path.removeFirst();
 
     if (roadModel.get().getPosition(this).equals(destination.get())) {
       nextDestination(timeLapse);
+      System.out.println("Agent " + this.hashCode());
     }
   }
 
