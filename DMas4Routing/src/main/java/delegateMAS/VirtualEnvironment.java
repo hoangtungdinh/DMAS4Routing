@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
@@ -21,6 +22,7 @@ public class VirtualEnvironment implements TickListener {
   Optional<GraphRoadModel> graphRoadModel;
   private Map<Connection<? extends ConnectionData>, ResourceAgent> edgeAgents;
   private Map<Point, ResourceAgent> nodeAgents;
+  public final static int HOPS_AHEAD = 5;
   
   /**
    * Instantiates a new virtual environment.
@@ -96,7 +98,8 @@ public class VirtualEnvironment implements TickListener {
             newRoute.add(lastNode);
             if (lastNode.equals(goal)) {
               // if reached goal then return
-              return newRoute;
+//              return newRoute;
+              return exploreHopsAhead(agentID, newRoute, time);
             } else {
               tmpRouteList.add(new Route(newRoute));
             }
@@ -126,7 +129,8 @@ public class VirtualEnvironment implements TickListener {
                   newRoute.add(nextNode);
                   if (nextNode.equals(goal)) {
                     // if reached goal then return
-                    return newRoute;
+//                    return newRoute;
+                    return exploreHopsAhead(agentID, newRoute, time);
                   } else {
                     tmpRouteList.add(new Route(newRoute));
                   }
@@ -151,9 +155,43 @@ public class VirtualEnvironment implements TickListener {
       }
     }
 
-    System.out.println(currentTime + "  " + time);
     // if can't reach goal, then return arbitrary route
     return routeList.get(0).getRoute();
+  }
+  
+  @SuppressWarnings("unchecked")
+  public ArrayList<Point> exploreHopsAhead(int agentID, ArrayList<Point> path,
+      long currentTime) {
+    Stack<Route> routeStack = new Stack<Route>();
+    routeStack.push(new Route(path));
+    ArrayList<Point> longestRoute = (ArrayList<Point>) path.clone();
+    
+    int initialLength = path.size();
+    
+    while (!routeStack.isEmpty()) {
+      final Route route = routeStack.pop();
+      final Point lastNode = route.getLastNode();
+      final Collection<Point> outgoingNodes = graphRoadModel.get().getGraph()
+          .getOutgoingConnections(lastNode);
+      for (Point nextNode : outgoingNodes) {
+        final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
+        final long time = currentTime
+            + (route.getRoute().size() - initialLength + 1) * 1000;
+        if (!route.contains(nextNode) && nodeAgent.isAvailable(agentID, time)) {
+          final ArrayList<Point> newRoute = route.getRoute();
+          newRoute.add(nextNode);
+          if (newRoute.size() - initialLength == HOPS_AHEAD) {
+            return newRoute;
+          } else if (newRoute.size() > longestRoute.size()) {
+            longestRoute = (ArrayList<Point>) newRoute.clone();
+          } else {
+            routeStack.push(new Route(newRoute));
+          }
+        }
+      }
+    }
+    System.out.println(longestRoute.size() - initialLength);
+    return longestRoute;
   }
   
   /**
