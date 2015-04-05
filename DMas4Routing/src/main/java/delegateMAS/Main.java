@@ -20,8 +20,8 @@ import com.google.common.collect.Table;
 public final class Main {
 
   private static final double VEHICLE_LENGTH = 2d;
-  private static final int MAP_SIZE_X = 16;
-  private static final int MAP_SIZE_Y = 16;
+  private static final int MAP_SIZE_X = 32;
+  private static final int MAP_SIZE_Y = 32;
   private static final int NUM_AGENTS = 1;
 
   private Main() {}
@@ -70,7 +70,7 @@ public final class Main {
     return builder.build();
   }
   
-  static Graph<LengthData> createInitialBeliefAboutGraph() {
+  static Graph<LengthData> createGraphStructure() {
     final Graph<LengthData> g = new TableGraph<>();
     
     final Table<Integer, Integer, Point> matrix = createMatrix(MAP_SIZE_X, MAP_SIZE_Y,
@@ -85,16 +85,6 @@ public final class Main {
   }
 
   static ListenableGraph<LengthData> createGraph() {
-    final Graph<LengthData> g = new TableGraph<>();
-    
-    final Table<Integer, Integer, Point> matrix = createMatrix(MAP_SIZE_X, MAP_SIZE_Y,
-        new Point(0, 0));
-    for (final Map<Integer, Point> column : matrix.columnMap().values()) {
-      Graphs.addBiPath(g, column.values());
-    }
-    for (final Map<Integer, Point> row : matrix.rowMap().values()) {
-      Graphs.addBiPath(g, row.values());
-    }
-    return new ListenableGraph<>(g);
+    return new ListenableGraph<>(createGraphStructure());
   }
 }

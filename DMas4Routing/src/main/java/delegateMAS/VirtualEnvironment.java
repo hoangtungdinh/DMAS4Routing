@@ -74,15 +74,18 @@ public class VirtualEnvironment implements TickListener {
         final Point lastNode = route.getLastNode();
         final int maxLength = (int) (deadline - time) / 1000;
         // check if staying at same node is possible
-        if (getShortestDistance(lastNode, goal) < maxLength
-            && nodeAgents.get(lastNode).isAvailable(agentID, time)) {
-          final ArrayList<Point> newRoute = route.getRoute();
-          newRoute.add(lastNode);
-          if (lastNode.equals(goal)) {
-            // if reached goal then return
-            return newRoute;
-          } else {
-            tmpRouteList.add(new Route(newRoute));
+        if (!visitedNodes.contains(lastNode)) {
+          visitedNodes.add(lastNode);
+          if (getShortestDistance(lastNode, goal) < maxLength
+              && nodeAgents.get(lastNode).isAvailable(agentID, time)) {
+            final ArrayList<Point> newRoute = route.getRoute();
+            newRoute.add(lastNode);
+            if (lastNode.equals(goal)) {
+              // if reached goal then return
+              return newRoute;
+            } else {
+              tmpRouteList.add(new Route(newRoute));
+            }
           }
         }
 
@@ -90,25 +93,24 @@ public class VirtualEnvironment implements TickListener {
         final Collection<Point> outgoingNodes = graphRoadModel.get().getGraph()
             .getOutgoingConnections(lastNode);
         for (Point nextNode : outgoingNodes) {
-          // do not allow cycle
-//          if (!route.contains(nextNode)
-//              && getShortestDistance(lastNode, nextNode) < maxLength) {
-          // check if node is already visited in this step
-          if (!visitedNodes.contains(nextNode)
-              && getShortestDistance(lastNode, nextNode) < maxLength) {
-            final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-            final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel.get()
-                .getGraph().getConnection(lastNode, nextNode));
-            if (nodeAgent.isAvailable(agentID, time)
-                && edgeAgent.isAvailable(agentID, time)) {
-              visitedNodes.add(nextNode);
-              final ArrayList<Point> newRoute = route.getRoute();
-              newRoute.add(nextNode);
-              if (nextNode.equals(goal)) {
-                // if reached goal then return
-                return newRoute;
-              } else {
-                tmpRouteList.add(new Route(newRoute));
+          // check if node is already visited in this step and do not allow
+          // cycle
+          if (!visitedNodes.contains(nextNode) && !route.contains(nextNode)) {
+            visitedNodes.add(nextNode);
+            if (getShortestDistance(lastNode, nextNode) < maxLength) {
+              final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
+              final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
+                  .get().getGraph().getConnection(lastNode, nextNode));
+              if (nodeAgent.isAvailable(agentID, time)
+                  && edgeAgent.isAvailable(agentID, time)) {
+                final ArrayList<Point> newRoute = route.getRoute();
+                newRoute.add(nextNode);
+                if (nextNode.equals(goal)) {
+                  // if reached goal then return
+                  return newRoute;
+                } else {
+                  tmpRouteList.add(new Route(newRoute));
+                }
               }
             }
           }
