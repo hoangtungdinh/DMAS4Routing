@@ -22,7 +22,7 @@ public final class Main {
   private static final double VEHICLE_LENGTH = 2d;
   private static final int MAP_SIZE_X = 4;
   private static final int MAP_SIZE_Y = 4;
-  private static final int NUM_AGENTS = 3;
+  private static final int NUM_AGENTS = 1;
 
   private Main() {}
 
@@ -39,17 +39,16 @@ public final class Main {
         .build();
     
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
-        (GraphRoadModel) collisionGraphRoadModel, sim);
+        (GraphRoadModel) collisionGraphRoadModel);
     sim.addTickListener(virtualEnvironment);
 
     for (int i = 0; i < NUM_AGENTS; i++) {
-      sim.register(new VehicleAgent(sim.getRandomGenerator(),
-          virtualEnvironment, createInitialBeliefAboutGraph()));
+      sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment));
     }
 
     View.create(sim)
         .with(WarehouseRenderer.builder()
-            .setMargin(VEHICLE_LENGTH).showNodes().showNodeOccupancy()
+            .setMargin(2).showNodes().showNodeOccupancy()
         )
         .with(AGVRenderer.builder()
             .useDifferentColorsForVehicles().showVehicleOrigin().showVehicleCreationNumber()

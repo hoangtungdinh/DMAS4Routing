@@ -1,11 +1,12 @@
 package delegateMAS;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.GraphRoadModel;
@@ -18,89 +19,103 @@ public class VirtualEnvironment implements TickListener {
   
   /** The graph road model. */
   Optional<GraphRoadModel> graphRoadModel;
-  private Simulator simulator;
-  private Map<Connection<? extends ConnectionData>, EdgeAgent> edgeAgents;
-  private Map<Point, NodeAgent> nodeAgents;
+  private Map<Connection<? extends ConnectionData>, ResourceAgent> edgeAgents;
+  private Map<Point, ResourceAgent> nodeAgents;
   
   /**
    * Instantiates a new virtual environment.
    *
    * @param graphRoadModel the road model
    */
-  public VirtualEnvironment(GraphRoadModel graphRoadModel, Simulator simulator) {
+  public VirtualEnvironment(GraphRoadModel graphRoadModel) {
     this.graphRoadModel = Optional.of(graphRoadModel);
-    this.simulator = simulator;
     
-    nodeAgents = new HashMap<Point, NodeAgent>();
     Set<Point> nodes = graphRoadModel.getGraph().getNodes();
+    
+    nodeAgents = new HashMap<Point, ResourceAgent>();
+    
     for (Point p : nodes) {
-      nodeAgents.put(p, new NodeAgent());
+      nodeAgents.put(p, new ResourceAgent());
     }
     
-    edgeAgents = new HashMap<Connection<? extends ConnectionData>, EdgeAgent>();
-    for (Connection<? extends ConnectionData> conn : graphRoadModel.getGraph()
-        .getConnections()) {
-       edgeAgents.put(conn, new EdgeAgent(conn.getLength()));
-    }
-  }
-
-  /**
-   * Explore.
-   *
-   * @param agentID the agent id
-   * @param path the path
-   * @param speed the speed
-   * @return the estimated arrival time
-   */
-  public ExplorationInfo explore(int agentID, List<Point> path, double speed) {
-    long time = simulator.getCurrentTime();
-    Point p1;
-    Point p2;
-    Connection<? extends ConnectionData> conn;
+    edgeAgents = new HashMap<Connection<? extends ConnectionData>, ResourceAgent>();
     
-    for (int i = 0; i < path.size() - 1; i++) {
-      p1 = path.get(i);
-      p2 = path.get(i + 1);
-      conn = graphRoadModel.get().getGraph().getConnection(p2, p1);
-      time = edgeAgents.get(conn).checkAvailability(agentID, time, speed);
-      if (time == -1 || !nodeAgents.get(p2).checkAvailability(agentID, time)) {
-        return new ExplorationInfo(path.subList(0, i), Point.distance(p1, path.get(path.size() - 1)));
+    for (Point p : nodes) {
+      final Collection<Point> outGoingPoints = graphRoadModel.getGraph()
+          .getOutgoingConnections(p);
+      for (Point p1 : outGoingPoints) {
+        final Connection<? extends ConnectionData> conn1 = graphRoadModel
+            .getGraph().getConnection(p, p1);
+        final Connection<? extends ConnectionData> conn2 = graphRoadModel
+            .getGraph().getConnection(p1, p);
+        final ResourceAgent resourceAgent = new ResourceAgent();
+        edgeAgents.put(conn1, resourceAgent);
+        edgeAgents.put(conn2, resourceAgent);
       }
-    }
+    }    
+  }
+  
+  // TODO check correctness here
+  public ArrayList<Route> explore(int agentID, Point start, Point goal, long currentTime,
+      long deadline) {
+    ArrayList<Route> routeList = new ArrayList<Route>();
+    ArrayList<Point> firstRoute = new ArrayList<Point>();
+    firstRoute.add(start);
+    routeList.add(new Route(firstRoute));
     
-    return new ExplorationInfo(path, 0);
+    long time = currentTime;
+
+    while (time < deadline) {
+      time += 1000;
+      final ArrayList<Route> tmpRouteList = new ArrayList<Route>();
+      for (Route route : routeList) {
+        final Point lastNode = route.getLastNode();
+        // if lastNode is not goal node
+        if (!lastNode.equals(goal)) {
+          final int maxLength = (int) (deadline - time) / 1000;
+          // check if staying at same node is possible
+          if (getShortestDistance(lastNode, goal) < maxLength
+              && nodeAgents.get(lastNode).isAvailable(agentID, time)) {
+            final ArrayList<Point> newRoute = route.getRoute();
+            newRoute.add(lastNode);
+            tmpRouteList.add(new Route(newRoute));
+          }
+
+          // check for each outgoing node
+          final Collection<Point> outgoingNodes = graphRoadModel.get()
+              .getGraph().getOutgoingConnections(lastNode);
+          for (Point nextNode : outgoingNodes) {
+            if (getShortestDistance(lastNode, nextNode) < maxLength) {
+              final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
+              final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
+                  .get().getGraph().getConnection(lastNode, nextNode));
+              if (nodeAgent.isAvailable(agentID, time)
+                  && edgeAgent.isAvailable(agentID, time)) {
+                final ArrayList<Point> newRoute = route.getRoute();
+                newRoute.add(nextNode);
+                tmpRouteList.add(new Route(newRoute));
+              }
+            }
+          }
+        } else {
+          tmpRouteList.add(route);
+        }
+      }
+      routeList = tmpRouteList;
+    }
+
+    return routeList;
   }
   
   /**
-   * Make reservation.
+   * Gets the shortest distance between 2 nodes
    *
-   * @param agentID the agent id
-   * @param path the path
-   * @param speed the speed
-   * @return true, if make reservation successfully
+   * @param p1 the p1
+   * @param p2 the p2
+   * @return the shortest distance
    */
-  public boolean makeReservation(int agentID, List<Point> path, double speed) {
-    long time = simulator.getCurrentTime();
-    Point p1;
-    Point p2;
-    Connection<? extends ConnectionData> conn;
-    
-    if (path.size() == 1) {
-      p1 = path.get(0);
-      return nodeAgents.get(p1).makeReservation(agentID, time);
-    } else {
-      for (int i = 0; i < path.size() - 1; i++) {
-        p1 = path.get(i);
-        p2 = path.get(i + 1);
-        conn = graphRoadModel.get().getGraph().getConnection(p1, p2);
-        time = edgeAgents.get(conn).makeReservation(agentID, time, speed);
-        if (time == -1 || !nodeAgents.get(p2).makeReservation(agentID, time)) {
-          return false;
-        }
-      }
-    }
-    
-    return true;
+  public int getShortestDistance(Point p1, Point p2) {
+    return graphRoadModel.get().getShortestPathTo(p1, p2).size();
   }
 
   @Override
@@ -109,17 +124,13 @@ public class VirtualEnvironment implements TickListener {
 
   @Override
   public void afterTick(TimeLapse timeLapse) {
-    for (Map.Entry<Point, NodeAgent> entry : nodeAgents.entrySet()) {
+    for (Map.Entry<Point, ResourceAgent> entry : nodeAgents.entrySet()) {
       entry.getValue().refesh();
     }
 
-    for (Map.Entry<Connection<? extends ConnectionData>, EdgeAgent> entry : edgeAgents
+    for (Map.Entry<Connection<? extends ConnectionData>, ResourceAgent> entry : edgeAgents
         .entrySet()) {
       entry.getValue().refesh();
     }
-  }
-  
-  public void printCurrentTime() {
-    System.out.println(simulator.getCurrentTime());
   }
 }

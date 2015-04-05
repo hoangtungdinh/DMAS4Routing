@@ -1,31 +1,25 @@
 package delegateMAS;
 
-import org.joda.time.Interval;
+public class Reservation {
 
-public class Reservation implements Comparable<Reservation> {
-  
+  private long reservedTime;
   private int agentID;
-  private Interval interval;
   private int lifeTime;
-  
-  public Reservation(int agentID, Interval interval) {
+
+  public Reservation(long reservedTime, int agentID, int lifeTime) {
+    this.reservedTime = reservedTime;
     this.agentID = agentID;
-    this.interval = interval;
-    this.lifeTime = EdgeAgent.EVAPORATION_RATE;
+    this.lifeTime = lifeTime;
   }
-  
+
+  public long getReservedTime() {
+    return reservedTime;
+  }
+
   public int getAgentID() {
     return agentID;
   }
-  
-  public Interval getInterval() {
-    return interval;
-  }
-  
-  public boolean overlap(int agtID, Interval intv) {
-    return interval.overlaps(intv) && agtID != agentID;
-  }
-  
+
   public int getLifeTime() {
     return lifeTime;
   }
@@ -35,17 +29,4 @@ public class Reservation implements Comparable<Reservation> {
       lifeTime--;
     }
   }
-
-  @Override
-  public int compareTo(Reservation o) {
-    long comp = interval.getStartMillis() - o.getInterval().getStartMillis();
-    if (comp > 0) {
-      return 1;
-    } else if (comp < 0) {
-      return -1;
-    } else {
-      return 0;
-    }
-  }
-
 }
