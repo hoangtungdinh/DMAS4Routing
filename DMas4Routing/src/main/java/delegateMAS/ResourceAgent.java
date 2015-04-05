@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ResourceAgent {
 
-  public static final int LIFE_TIME = 5;
+  public static final int LIFE_TIME = 8;
   private List<Reservation> reservations;
   
   public ResourceAgent() {
@@ -14,7 +14,7 @@ public class ResourceAgent {
   }
   
   /**
-   * Checks if a timeslot is available.
+   * Checks if a time slot is available.
    *
    * @param agentID the agent id
    * @param time the time
@@ -22,10 +22,18 @@ public class ResourceAgent {
    */
   public boolean isAvailable(int agentID, long time) {
     for (Reservation resv : reservations) {
-      if (resv.getReservedTime() == time && resv.getAgentID() != agentID) {
-        return false;
+      // if time slot is reserved
+      if (resv.getReservedTime() == time) {
+        if (resv.getAgentID() != agentID) {
+          // if other agent booked, then false
+          return false;
+        } else {
+          // if this agent booked, then true
+          return true;
+        }
       }
     }
+    // if time slot hasn't been reserved, then true
     return true;
   }
   
@@ -37,12 +45,22 @@ public class ResourceAgent {
    * @return true, if book successfully
    */
   public boolean bookResource(int agentID, long time) {
-    if (isAvailable(agentID, time)) {
-      reservations.add(new Reservation(time, agentID, LIFE_TIME));
-      return true;
-    } else {
-      return false;
+    for (Reservation resv : reservations) {
+      // if time slot is reserved
+      if (resv.getReservedTime() == time) {
+        if (resv.getAgentID() != agentID) {
+          // if other agent booked, then false
+          return false;
+        } else {
+          // if this agent booked, then true
+          resv.setLifeTime(LIFE_TIME);
+          return true;
+        }
+      }
     }
+    // if time slot hasn't been reserved, then true
+    reservations.add(new Reservation(time, agentID, LIFE_TIME));
+    return true;
   }
   
   public void refesh() {
@@ -57,5 +75,9 @@ public class ResourceAgent {
         iterator.remove();
       }
     }
+  }
+  
+  public List<Reservation> getReservations() {
+    return reservations;
   }
 }

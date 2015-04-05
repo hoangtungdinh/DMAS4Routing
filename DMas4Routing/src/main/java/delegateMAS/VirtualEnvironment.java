@@ -163,24 +163,24 @@ public class VirtualEnvironment implements TickListener {
    *
    * @param agentID the agent id
    * @param path the path
+   * @param start the start point
    * @param currentTime the current time
    * @return true, if book successfully
    */
-  public boolean bookResource(int agentID, ArrayList<Point> path,
+  public boolean bookResource(int agentID, ArrayList<Point> path, Point start,
       long currentTime) {
-    if (path.size() < 2) {
+    if (path.size() < 1) {
       return false;
     }
     
     long time = currentTime;
+    Point currentNode = start;
     
-    for (int index = 0; index < path.size() - 1; index++) {
+    for (Point nextNode : path) {
       time += 1000;
-      final Point from = path.get(index);
-      final Point to = path.get(index + 1);
-      if (from.equals(to)) {
+      if (nextNode.equals(currentNode)) {
         // stay at the same position, only need to book node
-        final ResourceAgent nodeAgent = nodeAgents.get(to);
+        final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
         final boolean bookingResponse = nodeAgent.bookResource(agentID, time);
         // if can't book, return false
         if (!bookingResponse) {
@@ -188,9 +188,9 @@ public class VirtualEnvironment implements TickListener {
         }
       } else {
         // move to next node, book both edge and the next node
-        final ResourceAgent nodeAgent = nodeAgents.get(to);
+        final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
         final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel.get()
-            .getGraph().getConnection(from, to));
+            .getGraph().getConnection(currentNode, nextNode));
         final boolean nodeResponse = nodeAgent.bookResource(agentID, time);
         final boolean edgeResponse = edgeAgent.bookResource(agentID, time);
         // if can't book node or edge, return false
@@ -198,6 +198,7 @@ public class VirtualEnvironment implements TickListener {
           return false;
         }
       }
+      currentNode = nextNode;
     }
     
     return true;
@@ -229,4 +230,28 @@ public class VirtualEnvironment implements TickListener {
       entry.getValue().refesh();
     }
   }
+  
+//  public void debug() {
+//    Point p1 = new Point(4.0, 8.0);
+//    Point p2 = new Point(4.0, 4.0);
+//    ResourceAgent edge1 = edgeAgents.get(graphRoadModel.get()
+//            .getGraph().getConnection(p1, p2));
+//    ResourceAgent edge2 = edgeAgents.get(graphRoadModel.get()
+//        .getGraph().getConnection(p2, p1));
+//    System.out.println(edge1.hashCode() + " " + edge2.hashCode());
+//    System.out.println(edge1.getReservations().size());
+    
+//    for (Map.Entry<Connection<? extends ConnectionData>, ResourceAgent> entry : edgeAgents
+//        .entrySet()) {
+//      if (entry.getValue().getReservations().size() != 0) {
+//        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+//      }
+//    }
+    
+//    for (Map.Entry<Point, ResourceAgent> entry : nodeAgents.entrySet()) {
+//      if (entry.getValue().getReservations().size() != 0) {
+//        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+//      }
+//    }
+//  }
 }

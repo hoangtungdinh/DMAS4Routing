@@ -35,6 +35,7 @@ class AGV implements TickListener, MovingRoadUser {
   private Optional<Point> destination;
   private LinkedList<Point> path;
   private VirtualEnvironment virtualEnvironment;
+  private boolean moveSuccessfully;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment) {
     rng = r;
@@ -52,7 +53,7 @@ class AGV implements TickListener, MovingRoadUser {
       p = model.getRandomPosition(rng);
     } while (roadModel.get().isOccupied(p));
     roadModel.get().addObjectAt(this, p);
-
+    moveSuccessfully = true;
   }
 
   @Override
@@ -64,37 +65,73 @@ class AGV implements TickListener, MovingRoadUser {
     destination = Optional.of(roadModel.get().getRandomPosition(rng));
     
     final ArrayList<Point> exploredPath = virtualEnvironment.explore(
-        this.hashCode(), roadModel.get().getPosition(this), destination.get(),
+        this.hashCode(), getPosition(), destination.get(),
         timeLapse.getStartTime(), timeLapse.getStartTime() + 100000);
     
-    final boolean bookingResponse = virtualEnvironment.bookResource(
-        this.hashCode(), exploredPath, timeLapse.getStartTime());
-    
-//    if (!bookingResponse) {
-//      System.out.println("aaaaaa");
-//    }
-
     path = new LinkedList<>(exploredPath);
     path.removeFirst();
+    
+    final boolean bookingResponse = virtualEnvironment.bookResource(
+        this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
+//    System.out.println(this.hashCode() + " :1: " + timeLapse.getStartTime());
+    
+    if (!bookingResponse) {
+      System.out.println("DO SOMETHING");
+    }
   }
 
   @Override
   public void tick(TimeLapse timeLapse) {
     if (!destination.isPresent()) {
       nextDestination(timeLapse);
-    }
-    
-    System.out.println(this.hashCode() + ": " + path);
-    roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-    path.removeFirst();
+    } else {
+      System.out.println(this.hashCode() + " " + path + " " + roadModel.get().getPosition(this));
+      if (moveSuccessfully) {
+        roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+      } else {
+        final Point lastPoint = roadModel.get().getConnection(this).get().to();
+        roadModel.get().moveTo(this, lastPoint, timeLapse);
+        roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+      }
 
-    if (roadModel.get().getPosition(this).equals(destination.get())) {
-      nextDestination(timeLapse);
-      System.out.println("Agent " + this.hashCode());
-    }
+      // handle the bug when 2 neighbor agents move at the same time
+      if (roadModel.get().getPosition(this).equals(path.getFirst())) {
+        moveSuccessfully = true;
+      } else {
+        moveSuccessfully = false;
+      }
+      path.removeFirst();
+      
+//      System.out.println(path);
+      
+//      System.out.println(this.hashCode() + " :2: " + timeLapse.getStartTime());
+      final boolean bookingResponse = virtualEnvironment.bookResource(
+          this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
+      
+      if (!bookingResponse) {
+//        System.out.println("ERRORRRRR");
+//        System.out.println(this.hashCode());
+      }
+
+      if (roadModel.get().getPosition(this).equals(destination.get())
+          || path.isEmpty()) {
+        nextDestination(timeLapse);
+      }
+    }    
+    
   }
 
   @Override
   public void afterTick(TimeLapse timeLapse) {}
+  
+  public Point getPosition() {
+    final Point pos = roadModel.get().getPosition(this);
+    
+    if (pos.x % 4 != 0 || pos.y % 4 != 0) {
+      return roadModel.get().getConnection(this).get().to();
+    } else {
+      return roadModel.get().getPosition(this);
+    }
+  }
 
 }
