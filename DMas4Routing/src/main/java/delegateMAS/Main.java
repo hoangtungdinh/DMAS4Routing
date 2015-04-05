@@ -35,6 +35,7 @@ public final class Main {
         .builder(createGraph()).setVehicleLength(VEHICLE_LENGTH).build();
     
     final Simulator sim = Simulator.builder()
+        .setTickLength(200l)
         .addModel(collisionGraphRoadModel)
         .build();
     

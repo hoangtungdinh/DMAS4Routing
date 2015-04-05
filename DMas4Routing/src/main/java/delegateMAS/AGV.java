@@ -35,7 +35,7 @@ class AGV implements TickListener, MovingRoadUser {
   private Optional<Point> destination;
   private LinkedList<Point> path;
   private VirtualEnvironment virtualEnvironment;
-  private boolean moveSuccessfully;
+  private boolean hasReached = true;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment) {
     rng = r;
@@ -53,7 +53,6 @@ class AGV implements TickListener, MovingRoadUser {
       p = model.getRandomPosition(rng);
     } while (roadModel.get().isOccupied(p));
     roadModel.get().addObjectAt(this, p);
-    moveSuccessfully = true;
   }
 
   @Override
@@ -73,66 +72,61 @@ class AGV implements TickListener, MovingRoadUser {
     
     final boolean bookingResponse = virtualEnvironment.bookResource(
         this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
-//    System.out.println(this.hashCode() + " :1: " + timeLapse.getStartTime());
     
     if (!bookingResponse) {
-//      System.out.println("DO SOMETHING");
+      System.out.println("DO SOMETHING");
     }
   }
 
   @Override
   public void tick(TimeLapse timeLapse) {
-    if (!destination.isPresent()) {
-      nextDestination(timeLapse);
-    } else {
-//      System.out.println(this.hashCode() + " " + path + " " + roadModel.get().getPosition(this));
-      if (moveSuccessfully) {
-        roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-      } else {
-        final Point lastPoint = roadModel.get().getConnection(this).get().to();
-        roadModel.get().moveTo(this, lastPoint, timeLapse);
-        roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-      }
-
-      // handle the bug when 2 neighbor agents move at the same time
-      if (roadModel.get().getPosition(this).equals(path.getFirst())) {
-        moveSuccessfully = true;
-      } else {
-        moveSuccessfully = false;
-      }
-      path.removeFirst();
-      
-//      System.out.println(path);
-      
-//      System.out.println(this.hashCode() + " :2: " + timeLapse.getStartTime());
-      System.out.println(this.hashCode() + " " + path + " " + roadModel.get().getPosition(this));
-      final boolean bookingResponse = virtualEnvironment.bookResource(
-          this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
-      
-      if (!bookingResponse) {
-//        System.out.println("ERRORRRRR");
-//        System.out.println(this.hashCode());
-      }
-
-      if (roadModel.get().getPosition(this).equals(destination.get())
-          || path.isEmpty()) {
+    if ((timeLapse.getStartTime() % 1000) == 0) {
+      if (!destination.isPresent()) {
         nextDestination(timeLapse);
       }
-    }    
-    
+      
+      final boolean bookingResponse = virtualEnvironment.bookResource(
+          this.hashCode(), new ArrayList<Point>(path), getPosition(),
+          timeLapse.getStartTime());
+
+      if (!bookingResponse) {
+        // System.out.println("ERRORRRRR");
+        // System.out.println(this.hashCode());
+      }
+
+      if (getPosition().equals(destination.get())) {
+        nextDestination(timeLapse);
+      }
+      
+      hasReached = false;
+      
+      System.out.println(this.hashCode() + "  " + path + "  " + getPosition());
+      roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+
+      if (getPosition().equals(path.getFirst())) {
+        path.removeFirst();
+        hasReached = true;
+      }
+      
+    } else {
+      if (!path.isEmpty()) {
+        if (!hasReached) {
+          roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+          if (getPosition().equals(path.getFirst())) {
+            path.removeFirst();
+            hasReached = true;
+          }
+        }
+      }
+    }
+
   }
 
   @Override
   public void afterTick(TimeLapse timeLapse) {}
   
   public Point getPosition() {
-    final Point pos = roadModel.get().getPosition(this);
-    
-    if (pos.x % 4 != 0 || pos.y % 4 != 0) {
-      return roadModel.get().getConnection(this).get().to();
-    } else {
-      return roadModel.get().getPosition(this);
-    }
+    return roadModel.get().getPosition(this);
   }
 
 }
