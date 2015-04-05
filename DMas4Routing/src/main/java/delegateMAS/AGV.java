@@ -76,7 +76,7 @@ class AGV implements TickListener, MovingRoadUser {
 //    System.out.println(this.hashCode() + " :1: " + timeLapse.getStartTime());
     
     if (!bookingResponse) {
-      System.out.println("DO SOMETHING");
+//      System.out.println("DO SOMETHING");
     }
   }
 
@@ -85,7 +85,7 @@ class AGV implements TickListener, MovingRoadUser {
     if (!destination.isPresent()) {
       nextDestination(timeLapse);
     } else {
-      System.out.println(this.hashCode() + " " + path + " " + roadModel.get().getPosition(this));
+//      System.out.println(this.hashCode() + " " + path + " " + roadModel.get().getPosition(this));
       if (moveSuccessfully) {
         roadModel.get().moveTo(this, path.getFirst(), timeLapse);
       } else {
@@ -105,6 +105,7 @@ class AGV implements TickListener, MovingRoadUser {
 //      System.out.println(path);
       
 //      System.out.println(this.hashCode() + " :2: " + timeLapse.getStartTime());
+      System.out.println(this.hashCode() + " " + path + " " + roadModel.get().getPosition(this));
       final boolean bookingResponse = virtualEnvironment.bookResource(
           this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
       

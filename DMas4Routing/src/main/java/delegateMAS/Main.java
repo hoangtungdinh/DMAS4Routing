@@ -22,7 +22,7 @@ public final class Main {
   private static final double VEHICLE_LENGTH = 2d;
   private static final int MAP_SIZE_X = 4;
   private static final int MAP_SIZE_Y = 4;
-  private static final int NUM_AGENTS = 2;
+  private static final int NUM_AGENTS = 3;
 
   private Main() {}
 
