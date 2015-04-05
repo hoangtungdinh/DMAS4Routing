@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ResourceAgent {
 
-  public static final int LIFE_TIME = 8*5;
+  public static final int LIFE_TIME = 3*5;
   private List<Reservation> reservations;
   
   public ResourceAgent() {
