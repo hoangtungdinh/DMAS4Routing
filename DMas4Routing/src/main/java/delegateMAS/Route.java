@@ -25,4 +25,8 @@ public class Route {
   public Point getLastNode() {
     return route.get(route.size() - 1);
   }
+  
+  public boolean contains(Point point) {
+    return route.contains(point);
+  }
 }

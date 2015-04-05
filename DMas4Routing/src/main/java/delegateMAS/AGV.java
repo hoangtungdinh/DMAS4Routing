@@ -16,6 +16,7 @@
 
 package delegateMAS;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import org.apache.commons.math3.random.RandomGenerator;
@@ -59,23 +60,30 @@ class AGV implements TickListener, MovingRoadUser {
     return 1000;
   }
 
-  void nextDestination() {
+  void nextDestination(TimeLapse timeLapse) {
     destination = Optional.of(roadModel.get().getRandomPosition(rng));
-    path = new LinkedList<>(roadModel.get().getShortestPathTo(this,
-        destination.get()));
+    
+//    path = new LinkedList<>(roadModel.get().getShortestPathTo(this,
+//        destination.get()));
+    final ArrayList<Point> exploredPath = virtualEnvironment.explore(
+        this.hashCode(), roadModel.get().getPosition(this), destination.get(),
+        timeLapse.getStartTime(), timeLapse.getStartTime() + 100000);
+    
+    path = new LinkedList<>(exploredPath);
+    path.removeFirst();
   }
 
   @Override
   public void tick(TimeLapse timeLapse) {
     if (!destination.isPresent()) {
-      nextDestination();
+      nextDestination(timeLapse);
     }
     
     roadModel.get().moveTo(this, path.getFirst(), timeLapse);
     path.removeFirst();
 
     if (roadModel.get().getPosition(this).equals(destination.get())) {
-      nextDestination();
+      nextDestination(timeLapse);
     }
   }
 

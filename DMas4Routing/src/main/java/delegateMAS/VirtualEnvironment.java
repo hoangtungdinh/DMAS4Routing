@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import com.github.rinde.rinsim.core.TickListener;
@@ -56,9 +57,9 @@ public class VirtualEnvironment implements TickListener {
   }
   
   // TODO check correctness here
-  public ArrayList<Route> explore(int agentID, Point start, Point goal, long currentTime,
+  public ArrayList<Point> explore(int agentID, Point start, Point goal, long currentTime,
       long deadline) {
-    ArrayList<Route> routeList = new ArrayList<Route>();
+    List<Route> routeList = new ArrayList<Route>();
     ArrayList<Point> firstRoute = new ArrayList<Point>();
     firstRoute.add(start);
     routeList.add(new Route(firstRoute));
@@ -67,44 +68,59 @@ public class VirtualEnvironment implements TickListener {
 
     while (time < deadline) {
       time += 1000;
+      final List<Point> visitedNodes = new ArrayList<Point>();
       final ArrayList<Route> tmpRouteList = new ArrayList<Route>();
       for (Route route : routeList) {
         final Point lastNode = route.getLastNode();
-        // if lastNode is not goal node
-        if (!lastNode.equals(goal)) {
-          final int maxLength = (int) (deadline - time) / 1000;
-          // check if staying at same node is possible
-          if (getShortestDistance(lastNode, goal) < maxLength
-              && nodeAgents.get(lastNode).isAvailable(agentID, time)) {
-            final ArrayList<Point> newRoute = route.getRoute();
-            newRoute.add(lastNode);
+        final int maxLength = (int) (deadline - time) / 1000;
+        // check if staying at same node is possible
+        if (getShortestDistance(lastNode, goal) < maxLength
+            && nodeAgents.get(lastNode).isAvailable(agentID, time)) {
+          final ArrayList<Point> newRoute = route.getRoute();
+          newRoute.add(lastNode);
+          if (lastNode.equals(goal)) {
+            // if reached goal then return
+            return newRoute;
+          } else {
             tmpRouteList.add(new Route(newRoute));
           }
+        }
 
-          // check for each outgoing node
-          final Collection<Point> outgoingNodes = graphRoadModel.get()
-              .getGraph().getOutgoingConnections(lastNode);
-          for (Point nextNode : outgoingNodes) {
-            if (getShortestDistance(lastNode, nextNode) < maxLength) {
-              final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-              final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
-                  .get().getGraph().getConnection(lastNode, nextNode));
-              if (nodeAgent.isAvailable(agentID, time)
-                  && edgeAgent.isAvailable(agentID, time)) {
-                final ArrayList<Point> newRoute = route.getRoute();
-                newRoute.add(nextNode);
+        // check for each outgoing node
+        final Collection<Point> outgoingNodes = graphRoadModel.get().getGraph()
+            .getOutgoingConnections(lastNode);
+        for (Point nextNode : outgoingNodes) {
+          // do not allow cycle
+//          if (!route.contains(nextNode)
+//              && getShortestDistance(lastNode, nextNode) < maxLength) {
+          // check if node is already visited in this step
+          if (!visitedNodes.contains(nextNode)
+              && getShortestDistance(lastNode, nextNode) < maxLength) {
+            final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
+            final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel.get()
+                .getGraph().getConnection(lastNode, nextNode));
+            if (nodeAgent.isAvailable(agentID, time)
+                && edgeAgent.isAvailable(agentID, time)) {
+              visitedNodes.add(nextNode);
+              final ArrayList<Point> newRoute = route.getRoute();
+              newRoute.add(nextNode);
+              if (nextNode.equals(goal)) {
+                // if reached goal then return
+                return newRoute;
+              } else {
                 tmpRouteList.add(new Route(newRoute));
               }
             }
           }
-        } else {
-          tmpRouteList.add(route);
         }
       }
       routeList = tmpRouteList;
     }
 
-    return routeList;
+    // if can't reach goal, then return arbitrary route
+    final Random randomGenerator = new Random();
+    final int index = randomGenerator.nextInt(routeList.size());
+    return routeList.get(index).getRoute();
   }
   
   /**
