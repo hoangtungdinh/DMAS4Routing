@@ -20,9 +20,10 @@ import com.google.common.collect.Table;
 public final class Main {
 
   private static final double VEHICLE_LENGTH = 2d;
-  private static final int MAP_SIZE_X = 4;
-  private static final int MAP_SIZE_Y = 4;
-  private static final int NUM_AGENTS = 3;
+  private static final int MAP_SIZE_X = 16;
+  private static final int MAP_SIZE_Y = 16;
+  private static final int NUM_AGENTS = 10;
+  private static final int BLOCK_SIZE = 4;
 
   private Main() {}
 
@@ -79,7 +80,7 @@ public final class Main {
     
     int i = 0;
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
-      if (i % 1 == 0) {
+      if (i % BLOCK_SIZE == 0) {
         Graphs.addBiPath(g, column.values());
       }
       i++;
@@ -87,7 +88,7 @@ public final class Main {
     
     int j = 0;
     for (final Map<Integer, Point> row : matrix.rowMap().values()) {
-      if (j % 1 == 0) {
+      if (j % BLOCK_SIZE == 0) {
         Graphs.addBiPath(g, row.values());
       }
       j++;

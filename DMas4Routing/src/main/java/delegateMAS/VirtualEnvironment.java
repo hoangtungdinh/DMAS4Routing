@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import com.github.rinde.rinsim.core.TickListener;
@@ -152,10 +151,9 @@ public class VirtualEnvironment implements TickListener {
       }
     }
 
+    System.out.println(currentTime + "  " + time);
     // if can't reach goal, then return arbitrary route
-    final Random randomGenerator = new Random();
-    final int index = randomGenerator.nextInt(routeList.size());
-    return routeList.get(index).getRoute();
+    return routeList.get(0).getRoute();
   }
   
   /**
@@ -230,28 +228,4 @@ public class VirtualEnvironment implements TickListener {
       entry.getValue().refesh();
     }
   }
-  
-//  public void debug() {
-//    Point p1 = new Point(4.0, 8.0);
-//    Point p2 = new Point(4.0, 4.0);
-//    ResourceAgent edge1 = edgeAgents.get(graphRoadModel.get()
-//            .getGraph().getConnection(p1, p2));
-//    ResourceAgent edge2 = edgeAgents.get(graphRoadModel.get()
-//        .getGraph().getConnection(p2, p1));
-//    System.out.println(edge1.hashCode() + " " + edge2.hashCode());
-//    System.out.println(edge1.getReservations().size());
-    
-//    for (Map.Entry<Connection<? extends ConnectionData>, ResourceAgent> entry : edgeAgents
-//        .entrySet()) {
-//      if (entry.getValue().getReservations().size() != 0) {
-//        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-//      }
-//    }
-    
-//    for (Map.Entry<Point, ResourceAgent> entry : nodeAgents.entrySet()) {
-//      if (entry.getValue().getReservations().size() != 0) {
-//        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-//      }
-//    }
-//  }
 }

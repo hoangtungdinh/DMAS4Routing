@@ -63,15 +63,9 @@ class AGV implements TickListener, MovingRoadUser {
   void nextDestination(TimeLapse timeLapse) {
     destination = Optional.of(roadModel.get().getRandomPosition(rng));
     
-    final ArrayList<Point> exploredPath = virtualEnvironment.explore(
-        this.hashCode(), getPosition(), destination.get(),
-        timeLapse.getStartTime(), timeLapse.getStartTime() + 100000);
+    explore(timeLapse);
     
-    path = new LinkedList<>(exploredPath);
-    path.removeFirst();
-    
-    final boolean bookingResponse = virtualEnvironment.bookResource(
-        this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
+    final boolean bookingResponse = bookResource(timeLapse);
     
     if (!bookingResponse) {
       System.out.println("DO SOMETHING");
@@ -85,22 +79,21 @@ class AGV implements TickListener, MovingRoadUser {
         nextDestination(timeLapse);
       }
       
-      final boolean bookingResponse = virtualEnvironment.bookResource(
-          this.hashCode(), new ArrayList<Point>(path), getPosition(),
-          timeLapse.getStartTime());
-
-      if (!bookingResponse) {
-        // System.out.println("ERRORRRRR");
-        // System.out.println(this.hashCode());
+      if (!path.isEmpty()) {
+        bookResource(timeLapse);
       }
 
       if (getPosition().equals(destination.get())) {
         nextDestination(timeLapse);
       }
       
+      if (path.isEmpty()) {
+        explore(timeLapse);
+        bookResource(timeLapse);
+      }
+      
       hasReached = false;
       
-      System.out.println(this.hashCode() + "  " + path + "  " + getPosition());
       roadModel.get().moveTo(this, path.getFirst(), timeLapse);
 
       if (getPosition().equals(path.getFirst())) {
@@ -109,6 +102,7 @@ class AGV implements TickListener, MovingRoadUser {
       }
       
     } else {
+      // this part is to solve the problem with priority in CollisionGraphRoadModel
       if (!path.isEmpty()) {
         if (!hasReached) {
           roadModel.get().moveTo(this, path.getFirst(), timeLapse);
@@ -127,6 +121,29 @@ class AGV implements TickListener, MovingRoadUser {
   
   public Point getPosition() {
     return roadModel.get().getPosition(this);
+  }
+  
+  public void explore(TimeLapse timeLapse) {
+    final ArrayList<Point> exploredPath = virtualEnvironment.explore(
+        this.hashCode(), getPosition(), destination.get(),
+        timeLapse.getStartTime(), timeLapse.getStartTime() + 100000);
+
+    if (exploredPath.get(exploredPath.size() - 1).equals(destination.get())) {
+      // if a path is found
+      path = new LinkedList<>(exploredPath);
+      path.removeFirst();
+    } else {
+      // if can't found path to destination, just move ahead one step
+      path = new LinkedList<>();
+      path.add(exploredPath.get(1));
+    }
+  }
+  
+  public boolean bookResource(TimeLapse timeLapse) {
+    final boolean bookingResponse = virtualEnvironment.bookResource(
+        this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
+    
+    return bookingResponse;
   }
 
 }
