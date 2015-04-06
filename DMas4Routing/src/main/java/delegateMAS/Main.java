@@ -4,7 +4,6 @@ import java.util.Map;
 
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
-import com.github.rinde.rinsim.core.model.road.GraphRoadModel;
 import com.github.rinde.rinsim.geom.Graph;
 import com.github.rinde.rinsim.geom.Graphs;
 import com.github.rinde.rinsim.geom.LengthData;
@@ -19,12 +18,6 @@ import com.google.common.collect.Table;
 
 public final class Main {
 
-  private static final double VEHICLE_LENGTH = 2d;
-  private static final int MAP_SIZE_X = 33;
-  private static final int MAP_SIZE_Y = 33;
-  private static final int NUM_AGENTS = 10;
-  private static final int BLOCK_SIZE = 4;
-
   private Main() {}
 
   /**
@@ -33,7 +26,7 @@ public final class Main {
   public static void main(String[] args) {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph()).setVehicleLength(VEHICLE_LENGTH).build();
+        .builder(createGraph()).setVehicleLength(Setting.VEHICLE_LENGTH).build();
     
     final Simulator sim = Simulator.builder()
         .setTickLength(200l)
@@ -41,10 +34,10 @@ public final class Main {
         .build();
     
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
-        (GraphRoadModel) collisionGraphRoadModel);
+        collisionGraphRoadModel);
     sim.addTickListener(virtualEnvironment);
 
-    for (int i = 0; i < NUM_AGENTS; i++) {
+    for (int i = 0; i < Setting.NUM_AGENTS; i++) {
       sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment));
     }
 
@@ -65,8 +58,8 @@ public final class Main {
     for (int c = 0; c < cols; c++) {
       for (int r = 0; r < rows; r++) {
         builder.put(r, c, new Point(
-            offset.x + c * VEHICLE_LENGTH * 2,
-            offset.y + r * VEHICLE_LENGTH * 2));
+            offset.x + c * Setting.VEHICLE_LENGTH * 2,
+            offset.y + r * Setting.VEHICLE_LENGTH * 2));
       }
     }
     return builder.build();
@@ -74,13 +67,13 @@ public final class Main {
   
   static Graph<LengthData> createGraphStructure() {
     final Graph<LengthData> g = new TableGraph<>();
-    
-    final Table<Integer, Integer, Point> matrix = createMatrix(MAP_SIZE_X, MAP_SIZE_Y,
-        new Point(0, 0));
+
+    final Table<Integer, Integer, Point> matrix = createMatrix(
+        Setting.MAP_SIZE_X, Setting.MAP_SIZE_Y, new Point(0, 0));
     
     int i = 0;
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
-      if (i % BLOCK_SIZE == 0) {
+      if (i % Setting.BLOCK_SIZE == 0) {
         Graphs.addBiPath(g, column.values());
       }
       i++;
@@ -88,7 +81,7 @@ public final class Main {
     
     int j = 0;
     for (final Map<Integer, Point> row : matrix.rowMap().values()) {
-      if (j % BLOCK_SIZE == 0) {
+      if (j % Setting.BLOCK_SIZE == 0) {
         Graphs.addBiPath(g, row.values());
       }
       j++;

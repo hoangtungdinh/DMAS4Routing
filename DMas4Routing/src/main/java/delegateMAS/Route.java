@@ -8,9 +8,15 @@ import com.github.rinde.rinsim.geom.Point;
 public class Route {
   
   private ArrayList<Point> route;
+  private boolean containsDestination;
   
   public Route(ArrayList<Point> route) {
+    this(route, false);
+  }
+  
+  public Route(ArrayList<Point> route, boolean containsDestination) {
     this.route = route;
+    this.containsDestination = containsDestination;
   }
   
   @SuppressWarnings("unchecked")
@@ -28,5 +34,9 @@ public class Route {
   
   public boolean contains(Point point) {
     return route.contains(point);
+  }
+  
+  public boolean containsDestination() {
+    return containsDestination;
   }
 }

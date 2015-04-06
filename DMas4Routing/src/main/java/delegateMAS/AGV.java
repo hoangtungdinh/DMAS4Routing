@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2011-2015 Rinde van Lon, iMinds-DistriNet, KU Leuven
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package delegateMAS;
 
 import java.util.ArrayList;
@@ -36,6 +20,7 @@ class AGV implements TickListener, MovingRoadUser {
   private LinkedList<Point> path;
   private VirtualEnvironment virtualEnvironment;
   private boolean hasReached = true;
+  private boolean pathContainsGoal = false;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment) {
     rng = r;
@@ -78,23 +63,29 @@ class AGV implements TickListener, MovingRoadUser {
       if (!destination.isPresent()) {
         nextDestination(timeLapse);
       }
-      
-      if (!path.isEmpty()) {
-        bookResource(timeLapse);
-      }
 
       if (getPosition().equals(destination.get())) {
         nextDestination(timeLapse);
       }
-      
-      if (path.isEmpty()) {
+
+      if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
         explore(timeLapse);
         bookResource(timeLapse);
+      } else {
+        if (!path.isEmpty()) {
+          if (pathContainsGoal) {
+            bookResource(timeLapse);
+          } else {
+            explore(timeLapse);
+            bookResource(timeLapse);
+          }
+        } else {
+          explore(timeLapse);
+          bookResource(timeLapse);
+        }
       }
       
       hasReached = false;
-      
-//      System.out.println(this.hashCode() + " " + path + " " + destination.get());
       roadModel.get().moveTo(this, path.getFirst(), timeLapse);
 
       if (getPosition().equals(path.getFirst())) {
@@ -125,18 +116,14 @@ class AGV implements TickListener, MovingRoadUser {
   }
   
   public void explore(TimeLapse timeLapse) {
-    final ArrayList<Point> exploredPath = virtualEnvironment.explore(
+    final Route exploredRoute = virtualEnvironment.explore(
         this.hashCode(), getPosition(), destination.get(),
         timeLapse.getStartTime());
 
-    if (exploredPath.get(exploredPath.size() - 1).equals(destination.get())) {
-      // if a path is found
-      path = new LinkedList<>(exploredPath);
+    pathContainsGoal = exploredRoute.containsDestination();
+    path = new LinkedList<>(exploredRoute.getRoute());
+    if (path.size() > 1) {
       path.removeFirst();
-    } else {
-      // if can't found path to destination, just move ahead one step
-      path = new LinkedList<>();
-      path.add(exploredPath.get(1));
     }
   }
   

@@ -13,7 +13,7 @@ import java.util.TreeMap;
 
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
-import com.github.rinde.rinsim.core.model.road.GraphRoadModel;
+import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
 import com.github.rinde.rinsim.geom.Connection;
 import com.github.rinde.rinsim.geom.ConnectionData;
 import com.github.rinde.rinsim.geom.Point;
@@ -22,21 +22,19 @@ import com.google.common.base.Optional;
 public class VirtualEnvironment implements TickListener {
   
   /** The graph road model. */
-  Optional<GraphRoadModel> graphRoadModel;
+  Optional<CollisionGraphRoadModel> roadModel;
   private Map<Connection<? extends ConnectionData>, ResourceAgent> edgeAgents;
   private Map<Point, ResourceAgent> nodeAgents;
-  public static final int HOPS_AHEAD = 5;
-  public static final long TIME_WINDOW = 10000;
   
   /**
    * Instantiates a new virtual environment.
    *
-   * @param graphRoadModel the road model
+   * @param roadModel the road model
    */
-  public VirtualEnvironment(GraphRoadModel graphRoadModel) {
-    this.graphRoadModel = Optional.of(graphRoadModel);
+  public VirtualEnvironment(CollisionGraphRoadModel roadModel) {
+    this.roadModel = Optional.of(roadModel);
     
-    Set<Point> nodes = graphRoadModel.getGraph().getNodes();
+    Set<Point> nodes = roadModel.getGraph().getNodes();
     
     nodeAgents = new HashMap<Point, ResourceAgent>();
     
@@ -47,13 +45,13 @@ public class VirtualEnvironment implements TickListener {
     edgeAgents = new HashMap<Connection<? extends ConnectionData>, ResourceAgent>();
     
     for (Point p : nodes) {
-      final Collection<Point> outGoingPoints = graphRoadModel.getGraph()
+      final Collection<Point> outGoingPoints = roadModel.getGraph()
           .getOutgoingConnections(p);
       for (Point p1 : outGoingPoints) {
-        final Connection<? extends ConnectionData> conn1 = graphRoadModel
-            .getGraph().getConnection(p, p1);
-        final Connection<? extends ConnectionData> conn2 = graphRoadModel
-            .getGraph().getConnection(p1, p);
+        final Connection<? extends ConnectionData> conn1 = roadModel.getGraph()
+            .getConnection(p, p1);
+        final Connection<? extends ConnectionData> conn2 = roadModel.getGraph()
+            .getConnection(p1, p);
         final ResourceAgent resourceAgent = new ResourceAgent();
         edgeAgents.put(conn1, resourceAgent);
         edgeAgents.put(conn2, resourceAgent);
@@ -61,14 +59,11 @@ public class VirtualEnvironment implements TickListener {
     }    
   }
   
-  public ArrayList<Point> explore(int agentID, Point start, Point goal,
+  public Route explore(int agentID, Point start, Point goal,
       long currentTime) {
-    // long time = currentTime;
-    // long deadline = currentTime;
-    //
-    // do {
-    // deadline += 1000;
-    // } while ((deadline % TIME_WINDOW) != 0);
+    // required length
+    int length = (int) (Setting.TIME_WINDOW - (currentTime % Setting.TIME_WINDOW)) / 1000;
+    length = length*2;
     
     // set of investigated node and time slot
     final Set<TimeNode> visitedNodes = new HashSet<>();
@@ -87,17 +82,31 @@ public class VirtualEnvironment implements TickListener {
       final Route route = routeQueue.remove(routeQueue.firstKey());
       final Point lastNode = route.getLastNode();
       // if the last node of the route is goal, then return
-      if (lastNode.equals(goal) && route.getRoute().size() > 1) {
-        return route.getRoute();
+      if (route.getRoute().size() > length) {
+        if (route.getLastNode().equals(goal)) {
+          return new Route(route.getRoute(), true);
+        } else {
+          return new Route(route.getRoute(), false);
+        }
+      } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
+        final long time = currentTime + (route.getRoute().size() - 1) * 1000;
+        ArrayList<Point> rawRoute = exploreHopsAhead(agentID, route.getRoute(),
+            time, length);
+        return new Route(rawRoute, true);
       }
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();
-      outgoingNodes.addAll(graphRoadModel.get().getGraph()
+      outgoingNodes.addAll(roadModel.get().getGraph()
           .getOutgoingConnections(lastNode));
       outgoingNodes.add(lastNode);
       // investigated time slot: current time + size of route * 1000
       final long time = currentTime + route.getRoute().size() * 1000;
       for (Point nextNode : outgoingNodes) {
+        if (route.getRoute().size() == 1 && !nextNode.equals(lastNode)
+            && roadModel.get().isOccupied(nextNode)) {
+          continue;
+        }
+        
         // pair of node and time slot
         final TimeNode timeNode = new TimeNode(nextNode, time);
         // if this pair hasn't been investigated
@@ -119,8 +128,8 @@ public class VirtualEnvironment implements TickListener {
             } else {
               // if next node is different from current node, check also the
               // edge between them
-              final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
-                  .get().getGraph().getConnection(lastNode, nextNode));
+              final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
+                  .getGraph().getConnection(lastNode, nextNode));
               if (edgeAgent.isAvailable(agentID, time)) {
                 // if the edge is also available, then create new route and add
                 // it to the queue
@@ -135,8 +144,9 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
-    System.out.println("FAIL");
-    return exploreHopsAhead(agentID, firstRoute, currentTime);
+    ArrayList<Point> rawRoute = exploreHopsAhead(agentID, firstRoute,
+        currentTime, length);
+    return new Route(rawRoute, false);
   }
   
   /**
@@ -154,7 +164,7 @@ public class VirtualEnvironment implements TickListener {
   
   @SuppressWarnings("unchecked")
   public ArrayList<Point> exploreHopsAhead(int agentID, ArrayList<Point> path,
-      long currentTime) {
+      long currentTime, int length) {
     Stack<Route> routeStack = new Stack<Route>();
     routeStack.push(new Route(path));
     ArrayList<Point> longestRoute = (ArrayList<Point>) path.clone();
@@ -163,12 +173,15 @@ public class VirtualEnvironment implements TickListener {
     
     while (!routeStack.isEmpty()) {
       final Route route = routeStack.pop();
+      if (route.getRoute().size() > length) {
+        return route.getRoute();
+      }
       final Point lastNode = route.getLastNode();
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();
-      outgoingNodes.addAll(graphRoadModel.get().getGraph()
-          .getOutgoingConnections(lastNode));
       outgoingNodes.add(lastNode);
+      outgoingNodes.addAll(roadModel.get().getGraph()
+          .getOutgoingConnections(lastNode));
       for (Point nextNode : outgoingNodes) {
         final long time = currentTime
             + (route.getRoute().size() - initialLength + 1) * 1000;
@@ -179,10 +192,21 @@ public class VirtualEnvironment implements TickListener {
             // if next node is similar to last node (agv doesn't move)
             final ArrayList<Point> newRoute = route.getRoute();
             newRoute.add(nextNode);
-            if (newRoute.size() - initialLength == HOPS_AHEAD) {
-              // if reached required length then return
-              return newRoute;
-            } else {
+            if (newRoute.size() > longestRoute.size()) {
+              // else store the longest route
+              longestRoute = (ArrayList<Point>) newRoute.clone();
+            }
+            // push new route into stack
+            routeStack.push(new Route(newRoute));
+          } else {
+            // if next node is different from current node, check also the
+            // edge between them
+            final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
+                .getGraph().getConnection(lastNode, nextNode));
+            if (edgeAgent.isAvailable(agentID, time)) {
+              // if edge is also available
+              final ArrayList<Point> newRoute = route.getRoute();
+              newRoute.add(nextNode);
               if (newRoute.size() > longestRoute.size()) {
                 // else store the longest route
                 longestRoute = (ArrayList<Point>) newRoute.clone();
@@ -190,32 +214,12 @@ public class VirtualEnvironment implements TickListener {
               // push new route into stack
               routeStack.push(new Route(newRoute));
             }
-          } else {
-            // if next node is different from current node, check also the
-            // edge between them
-            final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel.get()
-                .getGraph().getConnection(lastNode, nextNode));
-            if (edgeAgent.isAvailable(agentID, time)) {
-              // if edge is also available
-              final ArrayList<Point> newRoute = route.getRoute();
-              newRoute.add(nextNode);
-              if (newRoute.size() - initialLength == HOPS_AHEAD) {
-                // if reached required length then return
-                return newRoute;
-              } else {
-                if (newRoute.size() > longestRoute.size()) {
-                  // else store the longest route
-                  longestRoute = (ArrayList<Point>) newRoute.clone();
-                }
-                // push new route into stack
-                routeStack.push(new Route(newRoute));
-              }
-            }
           }
         }
       }
     }
 
+    System.out.println("FAIL");
     return longestRoute;
   }
   
@@ -250,7 +254,7 @@ public class VirtualEnvironment implements TickListener {
       } else {
         // move to next node, book both edge and the next node
         final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-        final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel.get()
+        final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
             .getGraph().getConnection(currentNode, nextNode));
         final boolean nodeResponse = nodeAgent.bookResource(agentID, time);
         final boolean edgeResponse = edgeAgent.bookResource(agentID, time);
@@ -278,7 +282,7 @@ public class VirtualEnvironment implements TickListener {
    * @return the shortest distance
    */
   public int getShortestPathDistance(Point p1, Point p2) {
-    return graphRoadModel.get().getShortestPathTo(p1, p2).size();
+    return roadModel.get().getShortestPathTo(p1, p2).size();
   }
   
   /**
