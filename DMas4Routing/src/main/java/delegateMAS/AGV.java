@@ -42,7 +42,7 @@ class AGV implements TickListener, MovingRoadUser {
 
   @Override
   public double getSpeed() {
-    return 1000;
+    return 1000d;
   }
 
   void nextDestination(TimeLapse timeLapse) {
@@ -67,7 +67,8 @@ class AGV implements TickListener, MovingRoadUser {
       if (getPosition().equals(destination.get())) {
         nextDestination(timeLapse);
       }
-      System.out.println(this.hashCode() + " " + path + " " + destination.get());
+      System.out.println(this.hashCode() + " " + path + " " + destination.get()
+          + " " + getPosition());
       if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
         explore(timeLapse);
         bookResource(timeLapse);

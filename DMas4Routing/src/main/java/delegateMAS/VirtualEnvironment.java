@@ -93,7 +93,11 @@ public class VirtualEnvironment implements TickListener {
         final long time = currentTime + (route.getRoute().size() - 1) * 1000;
         ArrayList<Point> rawRoute = exploreHopsAhead(agentID, route.getRoute(),
             time, length);
-        return new Route(rawRoute, true);
+        if (rawRoute.size() > length) {
+          return new Route(rawRoute, true);
+        } else {
+          return new Route(rawRoute, false);
+        }
       }
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();
@@ -222,9 +226,16 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
+//    if (longestRoute.size() == 1) {
+//      final ResourceAgent nodeAgent = nodeAgents.get(longestRoute.get(0));
+//      nodeAgent.setDeadlockWarning(agentID);
+//      System.out.println("FAIL");
+//    }
+    
     final ResourceAgent nodeAgent = nodeAgents.get(longestRoute
         .get(longestRoute.size() - 1));
-    nodeAgent.setDeadlockWarning();
+    nodeAgent.setDeadlockWarning(agentID);
+
     return longestRoute;
   }
   

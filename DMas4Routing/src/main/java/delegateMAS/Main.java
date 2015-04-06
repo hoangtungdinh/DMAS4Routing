@@ -58,8 +58,8 @@ public final class Main {
     for (int c = 0; c < cols; c++) {
       for (int r = 0; r < rows; r++) {
         builder.put(r, c, new Point(
-            offset.x + c * Setting.VEHICLE_LENGTH * 2,
-            offset.y + r * Setting.VEHICLE_LENGTH * 2));
+            offset.x + c * Setting.VEHICLE_LENGTH * 3,
+            offset.y + r * Setting.VEHICLE_LENGTH * 3));
       }
     }
     return builder.build();

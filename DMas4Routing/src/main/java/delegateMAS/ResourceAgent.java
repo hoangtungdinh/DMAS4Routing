@@ -7,13 +7,11 @@ import java.util.List;
 public class ResourceAgent {
 
   private List<Reservation> reservations;
-  private boolean containsDeadlock;
-  private int counter;
+  private DeadlockWarning deadlockWarning;
   
   public ResourceAgent() {
     reservations = new ArrayList<Reservation>();
-    containsDeadlock = false;
-    counter = 0;
+    deadlockWarning = new DeadlockWarning(false, 0, 0);
   }
   
   /**
@@ -24,7 +22,7 @@ public class ResourceAgent {
    * @return true, if is available
    */
   public boolean isAvailable(int agentID, long time) {
-    if (containsDeadlock) {
+    if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
       return false;
     } else {
       for (Reservation resv : reservations) {
@@ -52,7 +50,7 @@ public class ResourceAgent {
    * @return true, if book successfully
    */
   public boolean bookResource(int agentID, long time) {
-    if (containsDeadlock) {
+    if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
       return false;
     } else {
       for (Reservation resv : reservations) {
@@ -88,19 +86,15 @@ public class ResourceAgent {
       }
     }
     
-    if (counter > 0) {
-      counter--;
-    } else {
-      containsDeadlock = false;
-    }
+    deadlockWarning.refesh();
   }
   
   public List<Reservation> getReservations() {
     return reservations;
   }
   
-  public void setDeadlockWarning() {
-    containsDeadlock = true;
-    counter = Setting.PHEROMONES_LIFE_TIME;
+  public void setDeadlockWarning(int agentID) {
+    deadlockWarning = new DeadlockWarning(true, agentID,
+        Setting.PHEROMONES_LIFE_TIME);
   }
 }
