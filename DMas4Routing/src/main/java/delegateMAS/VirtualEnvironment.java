@@ -164,21 +164,53 @@ public class VirtualEnvironment implements TickListener {
     while (!routeStack.isEmpty()) {
       final Route route = routeStack.pop();
       final Point lastNode = route.getLastNode();
-      final Collection<Point> outgoingNodes = graphRoadModel.get().getGraph()
-          .getOutgoingConnections(lastNode);
+      // list of all possible next nodes (outgoing nodes and this node)
+      final List<Point> outgoingNodes = new ArrayList<>();
+      outgoingNodes.addAll(graphRoadModel.get().getGraph()
+          .getOutgoingConnections(lastNode));
+      outgoingNodes.add(lastNode);
       for (Point nextNode : outgoingNodes) {
-        final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
         final long time = currentTime
             + (route.getRoute().size() - initialLength + 1) * 1000;
-        if (!route.contains(nextNode) && nodeAgent.isAvailable(agentID, time)) {
-          final ArrayList<Point> newRoute = route.getRoute();
-          newRoute.add(nextNode);
-          if (newRoute.size() - initialLength == HOPS_AHEAD) {
-            return newRoute;
-          } else if (newRoute.size() > longestRoute.size()) {
-            longestRoute = (ArrayList<Point>) newRoute.clone();
+        // check if node is available
+        final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
+        if (nodeAgent.isAvailable(agentID, time)) {
+          if (nextNode.equals(lastNode)) {
+            // if next node is similar to last node (agv doesn't move)
+            final ArrayList<Point> newRoute = route.getRoute();
+            newRoute.add(nextNode);
+            if (newRoute.size() - initialLength == HOPS_AHEAD) {
+              // if reached required length then return
+              return newRoute;
+            } else {
+              if (newRoute.size() > longestRoute.size()) {
+                // else store the longest route
+                longestRoute = (ArrayList<Point>) newRoute.clone();
+              }
+              // push new route into stack
+              routeStack.push(new Route(newRoute));
+            }
           } else {
-            routeStack.push(new Route(newRoute));
+            // if next node is different from current node, check also the
+            // edge between them
+            final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel.get()
+                .getGraph().getConnection(lastNode, nextNode));
+            if (edgeAgent.isAvailable(agentID, time)) {
+              // if edge is also available
+              final ArrayList<Point> newRoute = route.getRoute();
+              newRoute.add(nextNode);
+              if (newRoute.size() - initialLength == HOPS_AHEAD) {
+                // if reached required length then return
+                return newRoute;
+              } else {
+                if (newRoute.size() > longestRoute.size()) {
+                  // else store the longest route
+                  longestRoute = (ArrayList<Point>) newRoute.clone();
+                }
+                // push new route into stack
+                routeStack.push(new Route(newRoute));
+              }
+            }
           }
         }
       }
