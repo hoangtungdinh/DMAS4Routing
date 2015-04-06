@@ -3,10 +3,13 @@ package delegateMAS;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.Stack;
+import java.util.TreeMap;
 
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
@@ -22,7 +25,8 @@ public class VirtualEnvironment implements TickListener {
   Optional<GraphRoadModel> graphRoadModel;
   private Map<Connection<? extends ConnectionData>, ResourceAgent> edgeAgents;
   private Map<Point, ResourceAgent> nodeAgents;
-  public final static int HOPS_AHEAD = 5;
+  public static final int HOPS_AHEAD = 5;
+  public static final long TIME_WINDOW = 10000;
   
   /**
    * Instantiates a new virtual environment.
@@ -57,106 +61,95 @@ public class VirtualEnvironment implements TickListener {
     }    
   }
   
-  /**
-   * Explore and find the fastest way from start to goal
-   *
-   * @param agentID the agent id
-   * @param start the start
-   * @param goal the goal
-   * @param currentTime the current time
-   * @param deadline the deadline
-   * @return the array list
-   */
-  public ArrayList<Point> explore(int agentID, Point start, Point goal, long currentTime,
-      long deadline) {
-    List<Route> routeList = new ArrayList<Route>();
-    // first route contains only start point
+  public ArrayList<Point> explore(int agentID, Point start, Point goal,
+      long currentTime) {
+    // long time = currentTime;
+    // long deadline = currentTime;
+    //
+    // do {
+    // deadline += 1000;
+    // } while ((deadline % TIME_WINDOW) != 0);
+    
+    // set of investigated node and time slot
+    final Set<TimeNode> visitedNodes = new HashSet<>();
+    
+    // sorted queue of routes
+    final SortedMap<Integer, Route> routeQueue = new TreeMap<>();
+    
+    // initialize the first route and add it to the queue
     ArrayList<Point> firstRoute = new ArrayList<Point>();
     firstRoute.add(start);
-    routeList.add(new Route(firstRoute));
+    final Route startRoute = new Route(firstRoute);
+    routeQueue.put(getEstimatedCost(startRoute, goal), startRoute);
     
-    long time = currentTime;
-
-    while (time < deadline) {
-      // explore until reaching deadline
-      time += 1000;
-      final int maxLength = (int) (deadline - time) / 1000;
-      // list of visited nodes in the current time step
-      final List<Point> visitedNodes = new ArrayList<Point>();
-      final ArrayList<Route> tmpRouteList = new ArrayList<Route>();
-      for (Route route : routeList) {
-        final Point lastNode = route.getLastNode();
-        // check if staying at same node is possible
-        // first check if investigated node is visited in this time step
-        if (!visitedNodes.contains(lastNode)) {
-          visitedNodes.add(lastNode);
-          // check if it is enough time to go from this node to goal
-          // and if it is available in this time step (no reservation yet)
-          if (getShortestDistance(lastNode, goal) < maxLength
-              && nodeAgents.get(lastNode).isAvailable(agentID, time)) {
-            final ArrayList<Point> newRoute = route.getRoute();
-            newRoute.add(lastNode);
-            if (lastNode.equals(goal)) {
-              // if reached goal then return
-//              return newRoute;
-              return exploreHopsAhead(agentID, newRoute, time);
-            } else {
-              tmpRouteList.add(new Route(newRoute));
-            }
-          }
-        }
-
-        // check for each outgoing node
-        final Collection<Point> outgoingNodes = graphRoadModel.get().getGraph()
-            .getOutgoingConnections(lastNode);
-        for (Point nextNode : outgoingNodes) {
-          // check if node is already visited in this step 
-          // and do not allow cycle
-          if (!visitedNodes.contains(nextNode) && !route.contains(nextNode)) {
-            // check if it is still possible to go from this node to goal
-            if (getShortestDistance(nextNode, goal) < maxLength) {
-              final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-              // check if next node is available in this time step
-              if (nodeAgent.isAvailable(agentID, time)) {
-                // if next node is available, check if edge from current node to
-                // next node is available
-                final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
-                    .get().getGraph().getConnection(lastNode, nextNode));
-                if (edgeAgent.isAvailable(agentID, time)) {
-                  // if next node can be reached, add to visited nodes
-                  visitedNodes.add(nextNode);
-                  final ArrayList<Point> newRoute = route.getRoute();
-                  newRoute.add(nextNode);
-                  if (nextNode.equals(goal)) {
-                    // if reached goal then return
-//                    return newRoute;
-                    return exploreHopsAhead(agentID, newRoute, time);
-                  } else {
-                    tmpRouteList.add(new Route(newRoute));
-                  }
-                }
-              } else {
-                // if next node is not available in this time step, mark it as
-                // visited node
-                visitedNodes.add(nextNode);
-              }
-            } else {
-              // if not enough time to go from this node to goal, mark it as
-              // visited node
-              visitedNodes.add(nextNode);
-            }
-          }
-        }
+    while (!routeQueue.isEmpty()) {
+      // select and remove the first route in the queue
+      final Route route = routeQueue.remove(routeQueue.firstKey());
+      final Point lastNode = route.getLastNode();
+      // if the last node of the route is goal, then return
+      if (lastNode.equals(goal) && route.getRoute().size() > 1) {
+        return route.getRoute();
       }
-      if (tmpRouteList.isEmpty()) {
-        break;
-      } else {
-        routeList = tmpRouteList;
+      // list of all possible next nodes (outgoing nodes and this node)
+      final List<Point> outgoingNodes = new ArrayList<>();
+      outgoingNodes.addAll(graphRoadModel.get().getGraph()
+          .getOutgoingConnections(lastNode));
+      outgoingNodes.add(lastNode);
+      // investigated time slot: current time + size of route * 1000
+      final long time = currentTime + route.getRoute().size() * 1000;
+      for (Point nextNode : outgoingNodes) {
+        // pair of node and time slot
+        final TimeNode timeNode = new TimeNode(nextNode, time);
+        // if this pair hasn't been investigated
+        if (!visitedNodes.contains(timeNode)) {
+          // mark it as investigated
+          visitedNodes.add(timeNode);
+          // check if this pair (node and time slot) is available
+          final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
+          if (nodeAgent.isAvailable(agentID, time)) {
+            // if this pair is available
+            if (nextNode.equals(lastNode)) {
+              // if next node is similar to current node (AGV stays at the same
+              // position), then create new route with this node and add to the
+              // queue
+              final ArrayList<Point> newPath = route.getRoute();
+              newPath.add(nextNode);
+              final Route newRoute = new Route(newPath);
+              routeQueue.put(getEstimatedCost(newRoute, goal), newRoute);
+            } else {
+              // if next node is different from current node, check also the
+              // edge between them
+              final ResourceAgent edgeAgent = edgeAgents.get(graphRoadModel
+                  .get().getGraph().getConnection(lastNode, nextNode));
+              if (edgeAgent.isAvailable(agentID, time)) {
+                // if the edge is also available, then create new route and add
+                // it to the queue
+                final ArrayList<Point> newPath = route.getRoute();
+                newPath.add(nextNode);
+                final Route newRoute = new Route(newPath);
+                routeQueue.put(getEstimatedCost(newRoute, goal), newRoute);
+              }
+            }
+          }
+        }
       }
     }
-
-    // if can't reach goal, then return arbitrary route
-    return routeList.get(0).getRoute();
+    
+    System.out.println("FAIL");
+    return exploreHopsAhead(agentID, firstRoute, currentTime);
+  }
+  
+  /**
+   * Gets the estimated cost of a route.
+   *
+   * @param route the route
+   * @param goal the goal
+   * @return the estimated cost
+   */
+  public Integer getEstimatedCost(Route route, Point goal) {
+    int gValue = route.getRoute().size();
+    int hValue = getShortestPathDistance(route.getLastNode(), goal);
+    return gValue + hValue - 1;
   }
   
   @SuppressWarnings("unchecked")
@@ -190,7 +183,7 @@ public class VirtualEnvironment implements TickListener {
         }
       }
     }
-    System.out.println(longestRoute.size() - initialLength);
+
     return longestRoute;
   }
   
@@ -241,14 +234,35 @@ public class VirtualEnvironment implements TickListener {
   }
   
   /**
-   * Gets the shortest distance between 2 nodes
+   * Gets the shortest path distance between 2 nodes
+   * 
+   * Basically, euclidean distance and shortest path distance
+   * both are good heuristic criteria (because they are both underestimate).
+   * Shortest path distance is better because it is closer to the real value.
+   * Euclidean distance is faster because it doesn't have to perform A*
    *
    * @param p1 the p1
    * @param p2 the p2
    * @return the shortest distance
    */
-  public int getShortestDistance(Point p1, Point p2) {
+  public int getShortestPathDistance(Point p1, Point p2) {
     return graphRoadModel.get().getShortestPathTo(p1, p2).size();
+  }
+  
+  /**
+   * Gets the euclidean distance.
+   * 
+   * Basically, euclidean distance and shortest path distance
+   * both are good heuristic criteria (because they are both underestimate).
+   * Shortest path distance is better because it is closer to the real value.
+   * Euclidean distance is faster because it doesn't have to perform A*
+   *
+   * @param p1 the p1
+   * @param p2 the p2
+   * @return the euclidean distance
+   */
+  public double getEuclideanDistance(Point p1, Point p2) {
+    return Point.distance(p1, p2);
   }
 
   @Override

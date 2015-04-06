@@ -94,6 +94,7 @@ class AGV implements TickListener, MovingRoadUser {
       
       hasReached = false;
       
+//      System.out.println(this.hashCode() + " " + path + " " + destination.get());
       roadModel.get().moveTo(this, path.getFirst(), timeLapse);
 
       if (getPosition().equals(path.getFirst())) {
@@ -126,7 +127,7 @@ class AGV implements TickListener, MovingRoadUser {
   public void explore(TimeLapse timeLapse) {
     final ArrayList<Point> exploredPath = virtualEnvironment.explore(
         this.hashCode(), getPosition(), destination.get(),
-        timeLapse.getStartTime(), timeLapse.getStartTime() + 100000);
+        timeLapse.getStartTime());
 
     if (exploredPath.get(exploredPath.size() - 1).equals(destination.get())) {
       // if a path is found

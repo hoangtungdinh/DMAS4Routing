@@ -20,10 +20,10 @@ import com.google.common.collect.Table;
 public final class Main {
 
   private static final double VEHICLE_LENGTH = 2d;
-  private static final int MAP_SIZE_X = 4;
-  private static final int MAP_SIZE_Y = 4;
-  private static final int NUM_AGENTS = 3;
-  private static final int BLOCK_SIZE = 1;
+  private static final int MAP_SIZE_X = 33;
+  private static final int MAP_SIZE_Y = 33;
+  private static final int NUM_AGENTS = 10;
+  private static final int BLOCK_SIZE = 4;
 
   private Main() {}
 
