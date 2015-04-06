@@ -67,14 +67,18 @@ class AGV implements TickListener, MovingRoadUser {
       if (getPosition().equals(destination.get())) {
         nextDestination(timeLapse);
       }
-
+      System.out.println(this.hashCode() + " " + path + " " + destination.get());
       if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
         explore(timeLapse);
         bookResource(timeLapse);
       } else {
         if (!path.isEmpty()) {
           if (pathContainsGoal) {
-            bookResource(timeLapse);
+            boolean bookResponse = bookResource(timeLapse);
+            if (!bookResponse) {
+              explore(timeLapse);
+              bookResource(timeLapse);
+            }
           } else {
             explore(timeLapse);
             bookResource(timeLapse);
@@ -127,6 +131,12 @@ class AGV implements TickListener, MovingRoadUser {
     }
   }
   
+  /**
+   * Book resource.
+   *
+   * @param timeLapse the time lapse
+   * @return true, if book successfully
+   */
   public boolean bookResource(TimeLapse timeLapse) {
     final boolean bookingResponse = virtualEnvironment.bookResource(
         this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());

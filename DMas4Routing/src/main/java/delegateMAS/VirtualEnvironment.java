@@ -2,6 +2,7 @@ package delegateMAS;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,7 +64,7 @@ public class VirtualEnvironment implements TickListener {
       long currentTime) {
     // required length
     int length = (int) (Setting.TIME_WINDOW - (currentTime % Setting.TIME_WINDOW)) / 1000;
-    length = length*2;
+    length += Setting.TIME_WINDOW / 1000;
     
     // set of investigated node and time slot
     final Set<TimeNode> visitedNodes = new HashSet<>();
@@ -182,6 +183,8 @@ public class VirtualEnvironment implements TickListener {
       outgoingNodes.add(lastNode);
       outgoingNodes.addAll(roadModel.get().getGraph()
           .getOutgoingConnections(lastNode));
+      // shuffle whole list
+      Collections.shuffle(outgoingNodes);
       for (Point nextNode : outgoingNodes) {
         final long time = currentTime
             + (route.getRoute().size() - initialLength + 1) * 1000;
@@ -218,8 +221,10 @@ public class VirtualEnvironment implements TickListener {
         }
       }
     }
-
-    System.out.println("FAIL");
+    
+    final ResourceAgent nodeAgent = nodeAgents.get(longestRoute
+        .get(longestRoute.size() - 1));
+    nodeAgent.setDeadlockWarning();
     return longestRoute;
   }
   

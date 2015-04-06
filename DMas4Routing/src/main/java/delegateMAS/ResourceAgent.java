@@ -6,11 +6,14 @@ import java.util.List;
 
 public class ResourceAgent {
 
-  public static final int LIFE_TIME = 3*5;
   private List<Reservation> reservations;
+  private boolean containsDeadlock;
+  private int counter;
   
   public ResourceAgent() {
     reservations = new ArrayList<Reservation>();
+    containsDeadlock = false;
+    counter = 0;
   }
   
   /**
@@ -21,20 +24,24 @@ public class ResourceAgent {
    * @return true, if is available
    */
   public boolean isAvailable(int agentID, long time) {
-    for (Reservation resv : reservations) {
-      // if time slot is reserved
-      if (resv.getReservedTime() == time) {
-        if (resv.getAgentID() != agentID) {
-          // if other agent booked, then false
-          return false;
-        } else {
-          // if this agent booked, then true
-          return true;
+    if (containsDeadlock) {
+      return false;
+    } else {
+      for (Reservation resv : reservations) {
+        // if time slot is reserved
+        if (resv.getReservedTime() == time) {
+          if (resv.getAgentID() != agentID) {
+            // if other agent booked, then false
+            return false;
+          } else {
+            // if this agent booked, then true
+            return true;
+          }
         }
       }
+      // if time slot hasn't been reserved, then true
+      return true;
     }
-    // if time slot hasn't been reserved, then true
-    return true;
   }
   
   /**
@@ -45,22 +52,27 @@ public class ResourceAgent {
    * @return true, if book successfully
    */
   public boolean bookResource(int agentID, long time) {
-    for (Reservation resv : reservations) {
-      // if time slot is reserved
-      if (resv.getReservedTime() == time) {
-        if (resv.getAgentID() != agentID) {
-          // if other agent booked, then false
-          return false;
-        } else {
-          // if this agent booked, then true
-          resv.setLifeTime(LIFE_TIME);
-          return true;
+    if (containsDeadlock) {
+      return false;
+    } else {
+      for (Reservation resv : reservations) {
+        // if time slot is reserved
+        if (resv.getReservedTime() == time) {
+          if (resv.getAgentID() != agentID) {
+            // if other agent booked, then false
+            return false;
+          } else {
+            // if this agent booked, then true
+            resv.setLifeTime(Setting.PHEROMONES_LIFE_TIME);
+            return true;
+          }
         }
       }
+      // if time slot hasn't been reserved, then true
+      reservations.add(new Reservation(time, agentID,
+          Setting.PHEROMONES_LIFE_TIME));
+      return true;
     }
-    // if time slot hasn't been reserved, then true
-    reservations.add(new Reservation(time, agentID, LIFE_TIME));
-    return true;
   }
   
   public void refesh() {
@@ -75,9 +87,20 @@ public class ResourceAgent {
         iterator.remove();
       }
     }
+    
+    if (counter > 0) {
+      counter--;
+    } else {
+      containsDeadlock = false;
+    }
   }
   
   public List<Reservation> getReservations() {
     return reservations;
+  }
+  
+  public void setDeadlockWarning() {
+    containsDeadlock = true;
+    counter = Setting.PHEROMONES_LIFE_TIME;
   }
 }

@@ -1,22 +1,29 @@
 package test;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 
 public class Test {
 
   public static void main(String[] args) {
-    ATest x = new ATest(3);
-    Map<Long, ATest> map = new HashMap<Long, ATest>();
-    Long a1 = 2l;
-    Long a2 = 3l;
-    map.put(a1, x);
-    map.put(a2, x);
+    List<Integer> set = new ArrayList<Integer>();
+    set.add(1);
+    set.add(2);
+    set.add(3);
+    set.add(4);
     
-    ATest y = map.get(a1);
-    y.setA(444);
-    System.out.println(map.get(a2).getA());
+    Collections.shuffle(set);
+    
+    for (Integer i : set) {
+      System.out.println(i);
+    }
   }
 }
