@@ -70,19 +70,28 @@ public class VirtualEnvironment implements TickListener {
     final Set<TimeNode> visitedNodes = new HashSet<>();
     
     // sorted queue of routes
-    final SortedMap<Integer, Route> routeQueue = new TreeMap<>();
+    final SortedMap<Double, Route> routeQueue = new TreeMap<>();
     
     // initialize the first route and add it to the queue
     ArrayList<Point> firstRoute = new ArrayList<Point>();
     firstRoute.add(start);
     final Route startRoute = new Route(firstRoute);
     routeQueue.put(getEstimatedCost(startRoute, goal), startRoute);
+
+    // TODO TEST
+    Route longestRoute = new Route(firstRoute);
     
     while (!routeQueue.isEmpty()) {
       // select and remove the first route in the queue
       final Route route = routeQueue.remove(routeQueue.firstKey());
+      
+      //TODO TEST
+      if (route.getRoute().size() > longestRoute.getRoute().size()) {
+        longestRoute = new Route(route.getRoute());
+      }
+      
       final Point lastNode = route.getLastNode();
-      // if the last node of the route is goal, then return
+      // if reached required length, then return
       if (route.getRoute().size() > length) {
         if (route.getLastNode().equals(goal)) {
           return new Route(route.getRoute(), true);
@@ -90,6 +99,7 @@ public class VirtualEnvironment implements TickListener {
           return new Route(route.getRoute(), false);
         }
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
+        // if reached goal then return
         ArrayList<Point> rawRoute = exploreHopsAhead(agentID, route.getRoute(),
             currentTime, length);
         if (rawRoute.size() > length) {
@@ -110,13 +120,10 @@ public class VirtualEnvironment implements TickListener {
             && roadModel.get().isOccupied(nextNode)) {
           continue;
         }
-        
         // pair of node and time slot
         final TimeNode timeNode = new TimeNode(nextNode, time);
         // if this pair hasn't been investigated
         if (!visitedNodes.contains(timeNode)) {
-          // mark it as investigated
-          visitedNodes.add(timeNode);
           // check if this pair (node and time slot) is available
           final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
           if (nodeAgent.isAvailable(agentID, time)) {
@@ -128,7 +135,14 @@ public class VirtualEnvironment implements TickListener {
               final ArrayList<Point> newPath = route.getRoute();
               newPath.add(nextNode);
               final Route newRoute = new Route(newPath);
-              routeQueue.put(getEstimatedCost(newRoute, goal), newRoute);
+              double estimatedCost = getEstimatedCost(newRoute, goal);
+              while (routeQueue.containsKey(estimatedCost)) {
+                estimatedCost = Double.longBitsToDouble(Double
+                    .doubleToLongBits(estimatedCost) + 1);
+              }
+              routeQueue.put(estimatedCost, newRoute);
+              // mark it as investigated
+              visitedNodes.add(timeNode);
             } else {
               // if next node is different from current node, check also the
               // edge between them
@@ -140,17 +154,28 @@ public class VirtualEnvironment implements TickListener {
                 final ArrayList<Point> newPath = route.getRoute();
                 newPath.add(nextNode);
                 final Route newRoute = new Route(newPath);
-                routeQueue.put(getEstimatedCost(newRoute, goal), newRoute);
+                double estimatedCost = getEstimatedCost(newRoute, goal);
+                while (routeQueue.containsKey(estimatedCost)) {
+                  estimatedCost = Double.longBitsToDouble(Double
+                      .doubleToLongBits(estimatedCost) + 1);
+                }
+                routeQueue.put(estimatedCost, newRoute);
+                // mark it as investigated
+                visitedNodes.add(timeNode);
               }
             }
+          } else {
+            // mark it as investigated
+            visitedNodes.add(timeNode);
           }
         }
       }
     }
     
-    ArrayList<Point> rawRoute = exploreHopsAhead(agentID, firstRoute,
-        currentTime, length);
-    return new Route(rawRoute, false);
+//    ArrayList<Point> rawRoute = exploreHopsAhead(agentID, firstRoute,
+//        currentTime, length);
+    
+    return new Route(longestRoute.getRoute(), false);
   }
   
   /**
@@ -160,18 +185,22 @@ public class VirtualEnvironment implements TickListener {
    * @param goal the goal
    * @return the estimated cost
    */
-  public Integer getEstimatedCost(Route route, Point goal) {
+  public Double getEstimatedCost(Route route, Point goal) {
     int gValue = route.getRoute().size();
     int hValue = getShortestPathDistance(route.getLastNode(), goal);
-    return gValue + hValue - 1;
+    return (double) (gValue + hValue - 1);
   }
   
   @SuppressWarnings("unchecked")
   public ArrayList<Point> exploreHopsAhead(int agentID, ArrayList<Point> path,
       long currentTime, int length) {
+    // set of investigated node and time slot
+    final Set<TimeNode> visitedNodes = new HashSet<>();
+    
     Stack<Route> routeStack = new Stack<Route>();
     routeStack.push(new Route(path));
     ArrayList<Point> longestRoute = (ArrayList<Point>) path.clone();
+    
     while (!routeStack.isEmpty()) {
       final Route route = routeStack.pop();
       if (route.getRoute().size() > length) {
@@ -191,35 +220,42 @@ public class VirtualEnvironment implements TickListener {
           continue;
         }
         final long time = currentTime + route.getRoute().size() * 1000;
-        // check if node is available
-        final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-        if (nodeAgent.isAvailable(agentID, time)) {
-          if (nextNode.equals(lastNode)) {
-            // if next node is similar to last node (agv doesn't move)
-            final ArrayList<Point> newRoute = route.getRoute();
-            newRoute.add(nextNode);
-            if (newRoute.size() > longestRoute.size()) {
-              // else store the longest route
-              longestRoute = (ArrayList<Point>) newRoute.clone();
-            }
-            // push new route into stack
-            routeStack.push(new Route(newRoute));
-          } else {
-            // if next node is different from current node, check also the
-            // edge between them
-            final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
-                .getGraph().getConnection(lastNode, nextNode));
-            if (edgeAgent.isAvailable(agentID, time)) {
-              // if edge is also available
+        final TimeNode timeNode = new TimeNode(nextNode, time);
+        if (!visitedNodes.contains(timeNode)) {
+          // check if node is available
+          final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
+          if (nodeAgent.isAvailable(agentID, time)) {
+            if (nextNode.equals(lastNode)) {
+              // if next node is similar to last node (agv doesn't move)
               final ArrayList<Point> newRoute = route.getRoute();
               newRoute.add(nextNode);
               if (newRoute.size() > longestRoute.size()) {
-                // else store the longest route
+                // store the longest route
                 longestRoute = (ArrayList<Point>) newRoute.clone();
               }
               // push new route into stack
               routeStack.push(new Route(newRoute));
+              visitedNodes.add(timeNode);
+            } else {
+              // if next node is different from current node, check also the
+              // edge between them
+              final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
+                  .getGraph().getConnection(lastNode, nextNode));
+              if (edgeAgent.isAvailable(agentID, time)) {
+                // if edge is also available
+                final ArrayList<Point> newRoute = route.getRoute();
+                newRoute.add(nextNode);
+                if (newRoute.size() > longestRoute.size()) {
+                  // store the longest route
+                  longestRoute = (ArrayList<Point>) newRoute.clone();
+                }
+                // push new route into stack
+                routeStack.push(new Route(newRoute));
+                visitedNodes.add(timeNode);
+              }
             }
+          } else {
+            visitedNodes.add(timeNode);
           }
         }
       }
