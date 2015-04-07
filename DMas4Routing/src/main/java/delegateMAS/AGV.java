@@ -50,7 +50,9 @@ class AGV implements TickListener, MovingRoadUser {
   void nextDestination() {
     do {
       destination = Optional.of(roadModel.get().getRandomPosition(rng));
-    } while (destination.get().equals(getPosition()));
+    } while (destination.get().equals(getPosition())
+        || VirtualEnvironment.getHammingDistance(getPosition(),
+            destination.get()) == Setting.PATH_LENGTH);
   }
 
   @Override
@@ -91,8 +93,15 @@ class AGV implements TickListener, MovingRoadUser {
       }
     }
     
-    roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-    path.removeFirst();
+    if (roadModel.get().getGraph().hasConnection(getPosition(), path.getFirst())) {
+      roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+      path.removeFirst();
+    } else {
+      explore(startTime);
+      bookResource(startTime);
+      roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+      path.removeFirst();
+    }
 
   }
 

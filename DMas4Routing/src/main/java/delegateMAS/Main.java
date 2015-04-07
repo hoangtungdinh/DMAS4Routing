@@ -33,13 +33,25 @@ public final class Main {
         .build();
     
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
-        collisionGraphRoadModel);
+        collisionGraphRoadModel, sim);
     sim.addTickListener(virtualEnvironment);
 
     for (int i = 0; i < Setting.NUM_AGENTS; i++) {
       sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment, i));
     }
-
+    
+//    sim.addTickListener(new TickListener() {
+//      @Override
+//      public void tick(TimeLapse timeLapse) {}
+//
+//      @Override
+//      public void afterTick(TimeLapse timeLapse) {
+//        if (timeLapse.getTime() >= Setting.STOP_TIME) {
+//          sim.stop();
+//        }
+//      }
+//    });
+    
     View.create(sim)
         .with(WarehouseRenderer.builder()
             .setMargin(2).showNodes().showNodeOccupancy()

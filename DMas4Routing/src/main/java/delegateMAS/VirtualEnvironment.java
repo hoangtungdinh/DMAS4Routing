@@ -12,6 +12,9 @@ import java.util.SortedMap;
 import java.util.Stack;
 import java.util.TreeMap;
 
+import org.apache.commons.math3.random.RandomGenerator;
+
+import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
@@ -26,13 +29,19 @@ public class VirtualEnvironment implements TickListener {
   Optional<CollisionGraphRoadModel> roadModel;
   private Map<Connection<? extends ConnectionData>, ResourceAgent> edgeAgents;
   private Map<Point, ResourceAgent> nodeAgents;
+  private RandomGenerator r;
+  private Simulator simulator;
+  //TODO test
+//  private int numOfAgents = Setting.NUM_AGENTS;
   
   /**
    * Instantiates a new virtual environment.
    *
    * @param roadModel the road model
    */
-  public VirtualEnvironment(CollisionGraphRoadModel roadModel) {
+  public VirtualEnvironment(CollisionGraphRoadModel roadModel, Simulator sim) {
+    this.r = sim.getRandomGenerator();
+    this.simulator = sim;
     this.roadModel = Optional.of(roadModel);
     
     Set<Point> nodes = roadModel.getGraph().getNodes();
@@ -78,14 +87,12 @@ public class VirtualEnvironment implements TickListener {
     final Route startRoute = new Route(firstRoute);
     routeQueue.put(getEstimatedCost(startRoute, goal), startRoute);
 
-    // TODO TEST
     Route longestRoute = new Route(firstRoute);
     
     while (!routeQueue.isEmpty()) {
       // select and remove the first route in the queue
       final Route route = routeQueue.remove(routeQueue.firstKey());
-      
-      //TODO TEST
+
       if (route.getRoute().size() > longestRoute.getRoute().size()) {
         longestRoute = new Route(route.getRoute());
       }
@@ -186,9 +193,9 @@ public class VirtualEnvironment implements TickListener {
    * @return the estimated cost
    */
   public Double getEstimatedCost(Route route, Point goal) {
-    int gValue = route.getRoute().size();
-    int hValue = getShortestPathDistance(route.getLastNode(), goal);
-    return (double) (gValue + hValue - 1);
+    double gValue = route.getRoute().size();
+    double hValue = getHammingDistance(route.getLastNode(), goal);
+    return (gValue + hValue - 1);
   }
   
   @SuppressWarnings("unchecked")
@@ -261,6 +268,11 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
+    if (longestRoute.size() == 1) {
+      ResourceAgent nodeAgent = nodeAgents.get(longestRoute.get(0));
+      nodeAgent.setDeadlockWarning(agentID);
+    }
+    
     return longestRoute;
   }
   
@@ -296,6 +308,9 @@ public class VirtualEnvironment implements TickListener {
           return false;
         }
       } else {
+        if (!roadModel.get().getGraph().hasConnection(currentNode, nextNode)) {
+          return false;
+        }
         // move to next node, book both edge and the next node
         final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
         final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
@@ -341,8 +356,12 @@ public class VirtualEnvironment implements TickListener {
    * @param p2 the p2
    * @return the euclidean distance
    */
-  public double getEuclideanDistance(Point p1, Point p2) {
-    return Point.distance(p1, p2);
+  public static double getEuclideanDistance(Point p1, Point p2) {
+    return Point.distance(p1, p2) / 6;
+  }
+  
+  public static double getHammingDistance(Point p1, Point p2) {
+    return (Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)) / 6;
   }
 
   @Override
@@ -359,5 +378,29 @@ public class VirtualEnvironment implements TickListener {
         .entrySet()) {
       entry.getValue().refesh();
     }
+    
+    changeGraphStructure();
+    
+//    if (timeLapse.getStartTime() % 50000 == 0 && numOfAgents < 100) {
+//      addAgent(numOfAgents);
+//      numOfAgents++;
+//    }
+  }
+  
+  public void changeGraphStructure() {
+    if (r.nextInt(100) + 1 <= Setting.DYNAMIC_RATE) {
+      final Point randNode = roadModel.get().getGraph().getRandomNode(r);
+      Collection<Point> nextNodes = roadModel.get().getGraph()
+          .getOutgoingConnections(randNode);
+      roadModel
+          .get()
+          .getGraph()
+          .removeConnection(randNode,
+              (Point) nextNodes.toArray()[r.nextInt(nextNodes.size())]);
+    }
+  }
+  
+  public void addAgent(int agentID) {
+    simulator.register(new AGV(simulator.getRandomGenerator(), this, agentID));
   }
 }
