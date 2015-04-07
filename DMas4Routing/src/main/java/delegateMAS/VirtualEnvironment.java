@@ -72,8 +72,10 @@ public class VirtualEnvironment implements TickListener {
   public Route explore(int agentID, Point start, Point goal,
       long currentTime) {
     // required length
-    int length = (int) (Setting.TIME_WINDOW - (currentTime % Setting.TIME_WINDOW)) / 1000;
-    length += Setting.TIME_WINDOW / 1000;
+//    int length = (int) (Setting.TIME_WINDOW * 1000 - (currentTime % (Setting.TIME_WINDOW * 1000))) / 1000;
+//    length += Setting.TIME_WINDOW;
+    
+    int length = Setting.TIME_WINDOW;
     
     // set of investigated node and time slot
     final Set<TimeNode> visitedNodes = new HashSet<>();
@@ -95,25 +97,21 @@ public class VirtualEnvironment implements TickListener {
 
       if (route.getRoute().size() > longestRoute.getRoute().size()) {
         longestRoute = new Route(route.getRoute());
+      } else if (route.getRoute().size() == longestRoute.getRoute().size()) {
+        if (r.nextBoolean()) {
+          longestRoute = new Route(route.getRoute());
+        }
       }
       
       final Point lastNode = route.getLastNode();
-      // if reached required length, then return
       if (route.getRoute().size() > length) {
-        if (route.getLastNode().equals(goal)) {
-          return new Route(route.getRoute(), true);
-        } else {
-          return new Route(route.getRoute(), false);
-        }
+     // if reached required length, then return
+        return new Route(route.getRoute());
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
         // if reached goal then return
         ArrayList<Point> rawRoute = exploreHopsAhead(agentID, route.getRoute(),
             currentTime, length);
-        if (rawRoute.size() > length) {
-          return new Route(rawRoute, true);
-        } else {
-          return new Route(rawRoute, false);
-        }
+        return new Route(rawRoute);
       }
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();
@@ -182,7 +180,7 @@ public class VirtualEnvironment implements TickListener {
 //    ArrayList<Point> rawRoute = exploreHopsAhead(agentID, firstRoute,
 //        currentTime, length);
     
-    return new Route(longestRoute.getRoute(), false);
+    return new Route(longestRoute.getRoute());
   }
   
   /**

@@ -19,7 +19,6 @@ class AGV implements TickListener, MovingRoadUser {
   private Optional<Point> destination;
   private LinkedList<Point> path;
   private VirtualEnvironment virtualEnvironment;
-  private boolean pathContainsGoal = false;
   private int agentID;
   private int success = 0;
 
@@ -72,18 +71,14 @@ class AGV implements TickListener, MovingRoadUser {
       System.out.println(agentID + ": " + ++success);
     }
 
-    if ((startTime % Setting.TIME_WINDOW) == 0) {
+//    if ((startTime % (Setting.TIME_WINDOW*1000)) == 0) {
+    if (path.size() < (Setting.TIME_WINDOW / 2)) {
       explore(startTime);
       bookResource(startTime);
     } else {
       if (!path.isEmpty()) {
-        if (pathContainsGoal) {
-          boolean bookResponse = bookResource(startTime);
-          if (!bookResponse) {
-            explore(startTime);
-            bookResource(startTime);
-          }
-        } else {
+        boolean bookResponse = bookResource(startTime);
+        if (!bookResponse) {
           explore(startTime);
           bookResource(startTime);
         }
@@ -122,7 +117,6 @@ class AGV implements TickListener, MovingRoadUser {
     final Route exploredRoute = virtualEnvironment.explore(agentID,
         getPosition(), destination.get(), startTime);
 
-    pathContainsGoal = exploredRoute.containsDestination();
     path = new LinkedList<>(exploredRoute.getRoute());
     if (path.size() > 1) {
       path.removeFirst();
