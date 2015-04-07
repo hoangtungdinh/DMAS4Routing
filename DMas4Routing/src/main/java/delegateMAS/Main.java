@@ -38,7 +38,7 @@ public final class Main {
     sim.addTickListener(virtualEnvironment);
 
     for (int i = 0; i < Setting.NUM_AGENTS; i++) {
-      sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment));
+      sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment, i));
     }
 
     View.create(sim)

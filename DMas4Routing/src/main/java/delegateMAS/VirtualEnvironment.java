@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
+import com.github.rinde.rinsim.core.model.road.RoadUser;
 import com.github.rinde.rinsim.geom.Connection;
 import com.github.rinde.rinsim.geom.ConnectionData;
 import com.github.rinde.rinsim.geom.Point;
@@ -226,15 +227,13 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
-//    if (longestRoute.size() == 1) {
-//      final ResourceAgent nodeAgent = nodeAgents.get(longestRoute.get(0));
-//      nodeAgent.setDeadlockWarning(agentID);
-//      System.out.println("FAIL");
-//    }
-    
-    final ResourceAgent nodeAgent = nodeAgents.get(longestRoute
-        .get(longestRoute.size() - 1));
-    nodeAgent.setDeadlockWarning(agentID);
+    if (longestRoute.size() == 1) {
+      final ResourceAgent nodeAgent = nodeAgents.get(longestRoute.get(0));
+      nodeAgent.setDeadlockWarning(agentID);
+      System.out
+          .println(agentID + " FAIL ------------------------------------ "
+              + longestRoute.get(0));
+    }
 
     return longestRoute;
   }
@@ -323,13 +322,24 @@ public class VirtualEnvironment implements TickListener {
 
   @Override
   public void afterTick(TimeLapse timeLapse) {
-    for (Map.Entry<Point, ResourceAgent> entry : nodeAgents.entrySet()) {
-      entry.getValue().refesh();
-    }
+    final long startTime = timeLapse.getStartTime() + 1000;
+    if (startTime % 1000 == 0) {
+      for (Map.Entry<Point, ResourceAgent> entry : nodeAgents.entrySet()) {
+        entry.getValue().refesh();
+      }
 
-    for (Map.Entry<Connection<? extends ConnectionData>, ResourceAgent> entry : edgeAgents
-        .entrySet()) {
-      entry.getValue().refesh();
+      for (Map.Entry<Connection<? extends ConnectionData>, ResourceAgent> entry : edgeAgents
+          .entrySet()) {
+        entry.getValue().refesh();
+      }
+      
+      Set<RoadUser> roadUsers = roadModel.get().getObjects();
+      for (int i = 0; i <roadUsers.size(); i++) {
+        for (RoadUser roadUser : roadUsers) {
+          AGV agv = (AGV) roadUser;
+          agv.exploreAHead(startTime);
+        }
+      }
     }
   }
 }

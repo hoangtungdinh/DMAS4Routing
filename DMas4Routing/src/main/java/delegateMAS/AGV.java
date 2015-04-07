@@ -21,13 +21,16 @@ class AGV implements TickListener, MovingRoadUser {
   private VirtualEnvironment virtualEnvironment;
   private boolean hasReached = true;
   private boolean pathContainsGoal = false;
+  private boolean newDestination = false;
+  private int agentID;
 
-  AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment) {
+  AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID) {
     rng = r;
     roadModel = Optional.absent();
     destination = Optional.absent();
     path = new LinkedList<>();
     this.virtualEnvironment = virtualEnvironment;
+    this.agentID = agentID;
   }
 
   @Override
@@ -45,48 +48,50 @@ class AGV implements TickListener, MovingRoadUser {
     return 1000d;
   }
 
-  void nextDestination(TimeLapse timeLapse) {
-    destination = Optional.of(roadModel.get().getRandomPosition(rng));
-    
-    explore(timeLapse);
-    
-    final boolean bookingResponse = bookResource(timeLapse);
-    
-    if (!bookingResponse) {
-      System.out.println("DO SOMETHING");
-    }
+  void nextDestination(long startTime) {
+    do {
+      destination = Optional.of(roadModel.get().getRandomPosition(rng));
+    } while (destination.get().equals(getPosition()));
   }
 
   @Override
   public void tick(TimeLapse timeLapse) {
-    if ((timeLapse.getStartTime() % 1000) == 0) {
+    long startTime = timeLapse.getStartTime();
+    if ((startTime % 1000) == 0) {
       if (!destination.isPresent()) {
-        nextDestination(timeLapse);
+        nextDestination(startTime);
+        explore(startTime);
+        bookResource(startTime);
       }
 
-      if (getPosition().equals(destination.get())) {
-        nextDestination(timeLapse);
+//      if (getPosition().equals(destination.get())) {
+      if (newDestination) {
+        nextDestination(startTime);
+        explore(startTime);
+        bookResource(startTime);
+        newDestination = false;
       }
-      System.out.println(this.hashCode() + " " + path + " " + destination.get()
+      
+      System.out.println(agentID + " " + path + " " + destination.get()
           + " " + getPosition());
       if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
-        explore(timeLapse);
-        bookResource(timeLapse);
+        explore(startTime);
+        bookResource(startTime);
       } else {
         if (!path.isEmpty()) {
           if (pathContainsGoal) {
-            boolean bookResponse = bookResource(timeLapse);
+            boolean bookResponse = bookResource(startTime);
             if (!bookResponse) {
-              explore(timeLapse);
-              bookResource(timeLapse);
+              explore(startTime);
+              bookResource(startTime);
             }
           } else {
-            explore(timeLapse);
-            bookResource(timeLapse);
+            explore(startTime);
+            bookResource(startTime);
           }
         } else {
-          explore(timeLapse);
-          bookResource(timeLapse);
+          explore(startTime);
+          bookResource(startTime);
         }
       }
       
@@ -114,16 +119,22 @@ class AGV implements TickListener, MovingRoadUser {
   }
 
   @Override
-  public void afterTick(TimeLapse timeLapse) {}
+  public void afterTick(TimeLapse timeLapse) {
+    
+  }
   
   public Point getPosition() {
     return roadModel.get().getPosition(this);
   }
   
-  public void explore(TimeLapse timeLapse) {
-    final Route exploredRoute = virtualEnvironment.explore(
-        this.hashCode(), getPosition(), destination.get(),
-        timeLapse.getStartTime());
+  /**
+   * Explore.
+   *
+   * @param startTime the start time
+   */
+  public void explore(long startTime) {
+    final Route exploredRoute = virtualEnvironment.explore(agentID,
+        getPosition(), destination.get(), startTime);
 
     pathContainsGoal = exploredRoute.containsDestination();
     path = new LinkedList<>(exploredRoute.getRoute());
@@ -135,14 +146,30 @@ class AGV implements TickListener, MovingRoadUser {
   /**
    * Book resource.
    *
-   * @param timeLapse the time lapse
+   * @param startTime the start time
    * @return true, if book successfully
    */
-  public boolean bookResource(TimeLapse timeLapse) {
+  public boolean bookResource(long startTime) {
     final boolean bookingResponse = virtualEnvironment.bookResource(
-        this.hashCode(), new ArrayList<Point>(path), getPosition(), timeLapse.getStartTime());
+        agentID, new ArrayList<Point>(path), getPosition(), startTime);
     
     return bookingResponse;
   }
 
+  public void exploreAHead(long startTime) {
+    final Point currentPosition;
+    if (getPosition().x % 6 == 0 && getPosition().y % 6 == 0) {
+      currentPosition = getPosition();
+    } else {
+      currentPosition = path.getFirst();
+    }
+
+    if (currentPosition.equals(destination.get())) {
+      nextDestination(startTime);
+      newDestination = true;
+    }
+
+    virtualEnvironment.explore(agentID, currentPosition, destination.get(),
+        startTime);
+  }
 }
