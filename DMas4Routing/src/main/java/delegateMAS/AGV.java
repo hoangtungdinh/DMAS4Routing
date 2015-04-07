@@ -47,7 +47,7 @@ class AGV implements TickListener, MovingRoadUser {
     return 10000d;
   }
 
-  void nextDestination(long startTime) {
+  void nextDestination() {
     do {
       destination = Optional.of(roadModel.get().getRandomPosition(rng));
     } while (destination.get().equals(getPosition()));
@@ -58,19 +58,19 @@ class AGV implements TickListener, MovingRoadUser {
     long startTime = timeLapse.getStartTime();
 
     if (!destination.isPresent()) {
-      nextDestination(startTime);
+      nextDestination();
       explore(startTime);
       bookResource(startTime);
     }
 
     if (getPosition().equals(destination.get())) {
-      nextDestination(startTime);
+      nextDestination();
       explore(startTime);
       bookResource(startTime);
       System.out.println(agentID + ": " + ++success);
     }
 
-    if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
+    if ((startTime % Setting.TIME_WINDOW) == 0) {
       explore(startTime);
       bookResource(startTime);
     } else {
@@ -90,7 +90,7 @@ class AGV implements TickListener, MovingRoadUser {
         bookResource(startTime);
       }
     }
-
+    
     roadModel.get().moveTo(this, path.getFirst(), timeLapse);
     path.removeFirst();
 
@@ -107,8 +107,9 @@ class AGV implements TickListener, MovingRoadUser {
    * Explore.
    *
    * @param startTime the start time
+   * @return true, if explore successfully
    */
-  public void explore(long startTime) {
+  public boolean explore(long startTime) {
     final Route exploredRoute = virtualEnvironment.explore(agentID,
         getPosition(), destination.get(), startTime);
 
@@ -116,7 +117,10 @@ class AGV implements TickListener, MovingRoadUser {
     path = new LinkedList<>(exploredRoute.getRoute());
     if (path.size() > 1) {
       path.removeFirst();
+      return true;
     }
+    
+    return false;
   }
   
   /**

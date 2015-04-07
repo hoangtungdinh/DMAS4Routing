@@ -90,9 +90,8 @@ public class VirtualEnvironment implements TickListener {
           return new Route(route.getRoute(), false);
         }
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
-        final long time = currentTime + (route.getRoute().size() - 1) * 1000;
         ArrayList<Point> rawRoute = exploreHopsAhead(agentID, route.getRoute(),
-            time, length);
+            currentTime, length);
         if (rawRoute.size() > length) {
           return new Route(rawRoute, true);
         } else {
@@ -173,9 +172,6 @@ public class VirtualEnvironment implements TickListener {
     Stack<Route> routeStack = new Stack<Route>();
     routeStack.push(new Route(path));
     ArrayList<Point> longestRoute = (ArrayList<Point>) path.clone();
-    
-    int initialLength = path.size();
-    
     while (!routeStack.isEmpty()) {
       final Route route = routeStack.pop();
       if (route.getRoute().size() > length) {
@@ -194,8 +190,7 @@ public class VirtualEnvironment implements TickListener {
             && roadModel.get().isOccupied(nextNode)) {
           continue;
         }
-        final long time = currentTime
-            + (route.getRoute().size() - initialLength + 1) * 1000;
+        final long time = currentTime + route.getRoute().size() * 1000;
         // check if node is available
         final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
         if (nodeAgent.isAvailable(agentID, time)) {
@@ -230,14 +225,6 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
-//    if (longestRoute.size() == 1) {
-//      final ResourceAgent nodeAgent = nodeAgents.get(longestRoute.get(0));
-//      nodeAgent.setDeadlockWarning(agentID);
-//      System.out
-//          .println(agentID + " FAIL ------------------------------------ "
-//              + longestRoute.get(0));
-//    }
-
     return longestRoute;
   }
   
@@ -254,7 +241,8 @@ public class VirtualEnvironment implements TickListener {
       long currentTime) {
     if (path.size() < 1) {
       return false;
-    } else if (roadModel.get().isOccupied(path.get(0))) {
+    } else if (!start.equals(path.get(0))
+        && roadModel.get().isOccupied(path.get(0))) {
       return false;
     }
     
