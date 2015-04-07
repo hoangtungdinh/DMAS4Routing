@@ -21,8 +21,8 @@ class AGV implements TickListener, MovingRoadUser {
   private VirtualEnvironment virtualEnvironment;
   private boolean hasReached = true;
   private boolean pathContainsGoal = false;
-  private boolean newDestination = false;
   private int agentID;
+  private int success = 0;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID) {
     rng = r;
@@ -45,7 +45,7 @@ class AGV implements TickListener, MovingRoadUser {
 
   @Override
   public double getSpeed() {
-    return 1000d;
+    return 10000d;
   }
 
   void nextDestination(long startTime) {
@@ -64,16 +64,13 @@ class AGV implements TickListener, MovingRoadUser {
         bookResource(startTime);
       }
 
-//      if (getPosition().equals(destination.get())) {
-      if (newDestination) {
+      if (getPosition().equals(destination.get())) {
         nextDestination(startTime);
         explore(startTime);
         bookResource(startTime);
-        newDestination = false;
+        System.out.println(agentID + ": " + ++success);
       }
       
-      System.out.println(agentID + " " + path + " " + destination.get()
-          + " " + getPosition());
       if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
         explore(startTime);
         bookResource(startTime);
@@ -94,6 +91,9 @@ class AGV implements TickListener, MovingRoadUser {
           bookResource(startTime);
         }
       }
+      
+//      System.out.println(agentID + " " + path + " " + destination.get()
+//          + " " + getPosition());
       
       hasReached = false;
       roadModel.get().moveTo(this, path.getFirst(), timeLapse);
@@ -154,22 +154,5 @@ class AGV implements TickListener, MovingRoadUser {
         agentID, new ArrayList<Point>(path), getPosition(), startTime);
     
     return bookingResponse;
-  }
-
-  public void exploreAHead(long startTime) {
-    final Point currentPosition;
-    if (getPosition().x % 6 == 0 && getPosition().y % 6 == 0) {
-      currentPosition = getPosition();
-    } else {
-      currentPosition = path.getFirst();
-    }
-
-    if (currentPosition.equals(destination.get())) {
-      nextDestination(startTime);
-      newDestination = true;
-    }
-
-    virtualEnvironment.explore(agentID, currentPosition, destination.get(),
-        startTime);
   }
 }

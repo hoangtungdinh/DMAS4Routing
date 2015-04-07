@@ -11,7 +11,7 @@ public class ResourceAgent {
   
   public ResourceAgent() {
     reservations = new ArrayList<Reservation>();
-    deadlockWarning = new DeadlockWarning(false, 0, 0);
+    deadlockWarning = new DeadlockWarning(false, 0);
   }
   
   /**
@@ -22,7 +22,7 @@ public class ResourceAgent {
    * @return true, if is available
    */
   public boolean isAvailable(int agentID, long time) {
-    if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
+    if (deadlockWarning.isDeadlock()) {
       return false;
     } else {
       for (Reservation resv : reservations) {
@@ -50,7 +50,7 @@ public class ResourceAgent {
    * @return true, if book successfully
    */
   public boolean bookResource(int agentID, long time) {
-    if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
+    if (deadlockWarning.isDeadlock()) {
       return false;
     } else {
       for (Reservation resv : reservations) {
@@ -93,8 +93,7 @@ public class ResourceAgent {
     return reservations;
   }
   
-  public void setDeadlockWarning(int agentID) {
-    deadlockWarning = new DeadlockWarning(true, agentID,
-        Setting.PHEROMONES_LIFE_TIME);
+  public void setDeadlockWarning() {
+    deadlockWarning = new DeadlockWarning(true, Setting.PHEROMONES_LIFE_TIME);
   }
 }

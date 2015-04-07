@@ -3,21 +3,15 @@ package delegateMAS;
 public class DeadlockWarning {
 
   private boolean isDeadlock;
-  private int agentID;
   private int lifeTime;
 
-  public DeadlockWarning(boolean isDeadlock, int agentID, int lifeTime) {
+  public DeadlockWarning(boolean isDeadlock, int lifeTime) {
     this.isDeadlock = isDeadlock;
-    this.agentID = agentID;
     this.lifeTime = lifeTime;
   }
 
   public boolean isDeadlock() {
     return isDeadlock;
-  }
-
-  public int getAgentID() {
-    return agentID;
   }
 
   public int getLifeTime() {
