@@ -326,5 +326,14 @@ public class VirtualEnvironment implements TickListener {
   }
 
   @Override
-  public void afterTick(TimeLapse timeLapse) {}
+  public void afterTick(TimeLapse timeLapse) {
+    for (Map.Entry<Point, ResourceAgent> entry : nodeAgents.entrySet()) {
+      entry.getValue().refesh();
+    }
+
+    for (Map.Entry<Connection<? extends ConnectionData>, ResourceAgent> entry : edgeAgents
+        .entrySet()) {
+      entry.getValue().refesh();
+    }
+  }
 }

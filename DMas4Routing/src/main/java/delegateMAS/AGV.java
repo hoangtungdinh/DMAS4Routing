@@ -19,7 +19,6 @@ class AGV implements TickListener, MovingRoadUser {
   private Optional<Point> destination;
   private LinkedList<Point> path;
   private VirtualEnvironment virtualEnvironment;
-  private boolean hasReached = true;
   private boolean pathContainsGoal = false;
   private int agentID;
   private int success = 0;
@@ -57,32 +56,28 @@ class AGV implements TickListener, MovingRoadUser {
   @Override
   public void tick(TimeLapse timeLapse) {
     long startTime = timeLapse.getStartTime();
-    if ((startTime % 1000) == 0) {
-      if (!destination.isPresent()) {
-        nextDestination(startTime);
-        explore(startTime);
-        bookResource(startTime);
-      }
 
-      if (getPosition().equals(destination.get())) {
-        nextDestination(startTime);
-        explore(startTime);
-        bookResource(startTime);
-        System.out.println(agentID + ": " + ++success);
-      }
-      
-      if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
-        explore(startTime);
-        bookResource(startTime);
-      } else {
-        if (!path.isEmpty()) {
-          if (pathContainsGoal) {
-            boolean bookResponse = bookResource(startTime);
-            if (!bookResponse) {
-              explore(startTime);
-              bookResource(startTime);
-            }
-          } else {
+    if (!destination.isPresent()) {
+      nextDestination(startTime);
+      explore(startTime);
+      bookResource(startTime);
+    }
+
+    if (getPosition().equals(destination.get())) {
+      nextDestination(startTime);
+      explore(startTime);
+      bookResource(startTime);
+      System.out.println(agentID + ": " + ++success);
+    }
+
+    if ((timeLapse.getStartTime() % Setting.TIME_WINDOW) == 0) {
+      explore(startTime);
+      bookResource(startTime);
+    } else {
+      if (!path.isEmpty()) {
+        if (pathContainsGoal) {
+          boolean bookResponse = bookResource(startTime);
+          if (!bookResponse) {
             explore(startTime);
             bookResource(startTime);
           }
@@ -90,38 +85,19 @@ class AGV implements TickListener, MovingRoadUser {
           explore(startTime);
           bookResource(startTime);
         }
-      }
-      
-//      System.out.println(agentID + " " + path + " " + destination.get()
-//          + " " + getPosition());
-      
-      hasReached = false;
-      roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-
-      if (getPosition().equals(path.getFirst())) {
-        path.removeFirst();
-        hasReached = true;
-      }
-      
-    } else {
-      // this part is to solve the problem with priority in CollisionGraphRoadModel
-      if (!path.isEmpty()) {
-        if (!hasReached) {
-          roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-          if (getPosition().equals(path.getFirst())) {
-            path.removeFirst();
-            hasReached = true;
-          }
-        }
+      } else {
+        explore(startTime);
+        bookResource(startTime);
       }
     }
+
+    roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+    path.removeFirst();
 
   }
 
   @Override
-  public void afterTick(TimeLapse timeLapse) {
-    
-  }
+  public void afterTick(TimeLapse timeLapse) {}
   
   public Point getPosition() {
     return roadModel.get().getPosition(this);
