@@ -8,14 +8,24 @@ import com.github.rinde.rinsim.geom.Point;
 public class Route {
   
   private ArrayList<Point> route;
+  private int distanceToGoal;
   
   public Route(ArrayList<Point> route) {
+    this(route, -1);
+  }
+  
+  public Route(ArrayList<Point> route, int distanceToGoal) {
     this.route = route;
+    this.distanceToGoal = distanceToGoal;
   }
   
   @SuppressWarnings("unchecked")
   public ArrayList<Point> getRoute() {
     return (ArrayList<Point>) route.clone();
+  }
+  
+  public int getDistanceToGoal() {
+    return distanceToGoal;
   }
   
   public void addNode(Point node) {

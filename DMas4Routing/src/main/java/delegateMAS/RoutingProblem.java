@@ -26,7 +26,7 @@ public final class RoutingProblem {
   public static void main(String[] args) {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph()).setVehicleLength(Setting.VEHICLE_LENGTH).build();
+        .builder(createGraph2()).setVehicleLength(Setting.VEHICLE_LENGTH).build();
     
     final Simulator sim = Simulator.builder()
         .addModel(collisionGraphRoadModel)

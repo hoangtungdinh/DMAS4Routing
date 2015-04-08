@@ -21,6 +21,9 @@ class AGV implements TickListener, MovingRoadUser {
   private VirtualEnvironment virtualEnvironment;
   private int agentID;
   private int success = 0;
+  private int expCounter = 0;
+  private int intCounter = 0;
+  private int pathQuality = -1;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID) {
     rng = r;
@@ -60,40 +63,40 @@ class AGV implements TickListener, MovingRoadUser {
 
     if (!destination.isPresent()) {
       nextDestination();
-      explore(startTime);
-      bookResource(startTime);
-    }
-
-    if (getPosition().equals(destination.get())) {
+      exploreAndBook(startTime);
+    } else if (getPosition().equals(destination.get())) {
       nextDestination();
-      explore(startTime);
-      bookResource(startTime);
+      exploreAndBook(startTime);
       System.out.println(agentID + ": " + ++success);
-    }
-
-//    if ((startTime % (Setting.TIME_WINDOW*1000)) == 0) {
-    if (path.size() < (Setting.TIME_WINDOW / 2)) {
-      explore(startTime);
-      bookResource(startTime);
+    } else if (path.size() < Setting.MIN_LENGTH) {
+      // if path size is smaller than time window, then explore
+      exploreAndBook(startTime);
     } else {
-      if (!path.isEmpty()) {
-        boolean bookResponse = bookResource(startTime);
-        if (!bookResponse) {
-          explore(startTime);
+      if (expCounter == Setting.EXP_FREQ) {
+        final Route route = explore(startTime);
+        if (((route.getDistanceToGoal() * 100) / pathQuality) < Setting.INT_CHANGING_THRESHOLD) {
+          setPath(route);
           bookResource(startTime);
         }
-      } else {
-        explore(startTime);
-        bookResource(startTime);
+      }
+      if (intCounter == Setting.INT_FREQ) {
+        boolean bookResponse = bookResource(startTime);
+        if (!bookResponse) {
+          exploreAndBook(startTime);
+        }
       }
     }
     
-    if (roadModel.get().getGraph().hasConnection(getPosition(), path.getFirst())) {
+    // agv only moves to another node when there is a connection and no other
+    // agv is occupying that node
+    if (getPosition().equals(path.getFirst())
+        || (roadModel.get().getGraph()
+            .hasConnection(getPosition(), path.getFirst()) && !roadModel.get()
+            .isOccupied(path.getFirst()))) {
       roadModel.get().moveTo(this, path.getFirst(), timeLapse);
       path.removeFirst();
     } else {
-      explore(startTime);
-      bookResource(startTime);
+      exploreAndBook(startTime);
       roadModel.get().moveTo(this, path.getFirst(), timeLapse);
       path.removeFirst();
     }
@@ -101,7 +104,18 @@ class AGV implements TickListener, MovingRoadUser {
   }
 
   @Override
-  public void afterTick(TimeLapse timeLapse) {}
+  public void afterTick(TimeLapse timeLapse) {
+    expCounter++;
+    intCounter++;
+  }
+  
+  public void resetExpCounter() {
+    expCounter = 0;
+  }
+  
+  public void resetIntCounter() {
+    intCounter = 0;
+  }
   
   public Point getPosition() {
     return roadModel.get().getPosition(this);
@@ -113,17 +127,11 @@ class AGV implements TickListener, MovingRoadUser {
    * @param startTime the start time
    * @return true, if explore successfully
    */
-  public boolean explore(long startTime) {
+  public Route explore(long startTime) {
+    resetExpCounter();
     final Route exploredRoute = virtualEnvironment.explore(agentID,
         getPosition(), destination.get(), startTime);
-
-    path = new LinkedList<>(exploredRoute.getRoute());
-    if (path.size() > 1) {
-      path.removeFirst();
-      return true;
-    }
-    
-    return false;
+    return exploredRoute;
   }
   
   /**
@@ -133,9 +141,29 @@ class AGV implements TickListener, MovingRoadUser {
    * @return true, if book successfully
    */
   public boolean bookResource(long startTime) {
+    resetIntCounter();
     final boolean bookingResponse = virtualEnvironment.bookResource(
         agentID, new ArrayList<Point>(path), getPosition(), startTime);
     
     return bookingResponse;
+  }
+  
+  public void exploreAndBook(long startTime) {
+    Route route = explore(startTime);
+    setPath(route);    
+    bookResource(startTime);
+  }
+  
+  /**
+   * Sets the new path and update path quality
+   *
+   * @param route the new path
+   */
+  public void setPath(Route route) {
+    pathQuality = route.getDistanceToGoal();
+    path = new LinkedList<>(route.getRoute());
+    if (path.size() > 1) {
+      path.removeFirst();
+    }
   }
 }

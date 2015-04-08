@@ -72,9 +72,6 @@ public class VirtualEnvironment implements TickListener {
   public Route explore(int agentID, Point start, Point goal,
       long currentTime) {
     // required length
-//    int length = (int) (Setting.TIME_WINDOW * 1000 - (currentTime % (Setting.TIME_WINDOW * 1000))) / 1000;
-//    length += Setting.TIME_WINDOW;
-    
     int length = Setting.TIME_WINDOW;
     
     // set of investigated node and time slot
@@ -108,11 +105,10 @@ public class VirtualEnvironment implements TickListener {
      // if reached required length, then return
         return new Route(route.getRoute());
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
-        // if reached goal, extend to route to fit the time window, then return
-        // TODO evaluate that extend reached route is necessary or not
+        // if reached goal, extend to route to fit the time window, then returns
         ArrayList<Point> rawRoute = exploreHopsAhead(agentID, route.getRoute(),
             currentTime, length);
-        return new Route(route.getRoute());
+        return new Route(rawRoute, route.getRoute().size());
       }
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();
@@ -205,7 +201,7 @@ public class VirtualEnvironment implements TickListener {
     final Set<TimeNode> visitedNodes = new HashSet<>();
     
     Stack<Route> routeStack = new Stack<Route>();
-    routeStack.push(new Route(path));
+    routeStack.push(new Route((ArrayList<Point>) path.clone()));
     ArrayList<Point> longestRoute = (ArrayList<Point>) path.clone();
     
     while (!routeStack.isEmpty()) {
