@@ -8,10 +8,12 @@ public class ResourceAgent {
 
   private List<Reservation> reservations;
   private DeadlockWarning deadlockWarning;
+  private int pheromoneLifeTime;
   
-  public ResourceAgent() {
+  public ResourceAgent(int pheromoneLifeTime) {
     reservations = new ArrayList<Reservation>();
     deadlockWarning = new DeadlockWarning(0, false, 0);
+    this.pheromoneLifeTime = pheromoneLifeTime;
   }
   
   /**
@@ -61,14 +63,13 @@ public class ResourceAgent {
             return false;
           } else {
             // if this agent booked, then true
-            resv.setLifeTime(Setting.PHEROMONES_LIFE_TIME);
+            resv.setLifeTime(pheromoneLifeTime);
             return true;
           }
         }
       }
       // if time slot hasn't been reserved, then true
-      reservations.add(new Reservation(time, agentID,
-          Setting.PHEROMONES_LIFE_TIME));
+      reservations.add(new Reservation(time, agentID, pheromoneLifeTime));
       return true;
     }
   }

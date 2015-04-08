@@ -24,14 +24,26 @@ class AGV implements TickListener, MovingRoadUser {
   private int expCounter = 0;
   private int intCounter = 0;
   private int pathQuality = -1;
+  private int minTimeSteps;
+  private int explorationFreq;
+  private int intentionFreq;
+  private int intentionChangingThreshold;
+  private int pathLength;
 
-  AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID) {
+  AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID,
+      int minTimeSteps, int explorationFreq, int intentionFreq,
+      int intentionChangingThreshold, int pathLength) {
     rng = r;
     roadModel = Optional.absent();
     destination = Optional.absent();
     path = new LinkedList<>();
     this.virtualEnvironment = virtualEnvironment;
     this.agentID = agentID;
+    this.minTimeSteps = minTimeSteps;
+    this.explorationFreq = explorationFreq;
+    this.intentionFreq = intentionFreq;
+    this.intentionChangingThreshold = intentionChangingThreshold;
+    this.pathLength = pathLength;
   }
 
   @Override
@@ -53,8 +65,8 @@ class AGV implements TickListener, MovingRoadUser {
     do {
       destination = Optional.of(roadModel.get().getRandomPosition(rng));
     } while (destination.get().equals(getPosition())
-        || VirtualEnvironment.getHammingDistance(getPosition(),
-            destination.get()) == Setting.PATH_LENGTH);
+        || VirtualEnvironment.getShortestPathDistance(roadModel.get(), getPosition(),
+            destination.get()) == pathLength);
   }
 
   @Override
@@ -67,19 +79,18 @@ class AGV implements TickListener, MovingRoadUser {
     } else if (getPosition().equals(destination.get())) {
       nextDestination();
       exploreAndBook(startTime);
-      System.out.println(agentID + ": " + ++success);
-    } else if (path.size() < Setting.MIN_LENGTH) {
+    } else if (path.size() < minTimeSteps) {
       // if path size is smaller than time window, then explore
       exploreAndBook(startTime);
     } else {
-      if (expCounter == Setting.EXP_FREQ) {
+      if (expCounter == explorationFreq) {
         final Route route = explore(startTime);
-        if (((route.getDistanceToGoal() * 100) / pathQuality) < Setting.INT_CHANGING_THRESHOLD) {
+        if (((route.getDistanceToGoal() * 100) / pathQuality) < intentionChangingThreshold) {
           setPath(route);
           bookResource(startTime);
         }
       }
-      if (intCounter == Setting.INT_FREQ) {
+      if (intCounter == intentionFreq) {
         boolean bookResponse = bookResource(startTime);
         if (!bookResponse) {
           exploreAndBook(startTime);
@@ -165,5 +176,9 @@ class AGV implements TickListener, MovingRoadUser {
     if (path.size() > 1) {
       path.removeFirst();
     }
+  }
+  
+  public int getNumberOfSuccesses() {
+    return success;
   }
 }

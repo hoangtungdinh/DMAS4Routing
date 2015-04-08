@@ -30,18 +30,19 @@ public class VirtualEnvironment implements TickListener {
   private Map<Connection<? extends ConnectionData>, ResourceAgent> edgeAgents;
   private Map<Point, ResourceAgent> nodeAgents;
   private RandomGenerator r;
-  private Simulator simulator;
-  //TODO test
-//  private int numOfAgents = Setting.NUM_AGENTS;
+  private int dynamicRate;
+  private int timeWindow;
   
   /**
    * Instantiates a new virtual environment.
    *
    * @param roadModel the road model
    */
-  public VirtualEnvironment(CollisionGraphRoadModel roadModel, Simulator sim) {
+  public VirtualEnvironment(CollisionGraphRoadModel roadModel, Simulator sim,
+      int dynamicRate, int timeWindow, int pheromoneLifeTime) {
     this.r = sim.getRandomGenerator();
-    this.simulator = sim;
+    this.dynamicRate = dynamicRate;
+    this.timeWindow = timeWindow;
     this.roadModel = Optional.of(roadModel);
     
     Set<Point> nodes = roadModel.getGraph().getNodes();
@@ -49,7 +50,7 @@ public class VirtualEnvironment implements TickListener {
     nodeAgents = new HashMap<Point, ResourceAgent>();
     
     for (Point p : nodes) {
-      nodeAgents.put(p, new ResourceAgent());
+      nodeAgents.put(p, new ResourceAgent(pheromoneLifeTime));
     }
     
     edgeAgents = new HashMap<Connection<? extends ConnectionData>, ResourceAgent>();
@@ -62,7 +63,7 @@ public class VirtualEnvironment implements TickListener {
             .getConnection(p, p1);
         final Connection<? extends ConnectionData> conn2 = roadModel.getGraph()
             .getConnection(p1, p);
-        final ResourceAgent resourceAgent = new ResourceAgent();
+        final ResourceAgent resourceAgent = new ResourceAgent(pheromoneLifeTime);
         edgeAgents.put(conn1, resourceAgent);
         edgeAgents.put(conn2, resourceAgent);
       }
@@ -72,7 +73,7 @@ public class VirtualEnvironment implements TickListener {
   public Route explore(int agentID, Point start, Point goal,
       long currentTime) {
     // required length
-    int length = Setting.TIME_WINDOW;
+    int length = timeWindow;
     
     // set of investigated node and time slot
     final Set<TimeNode> visitedNodes = new HashSet<>();
@@ -331,8 +332,9 @@ public class VirtualEnvironment implements TickListener {
    * @param p2 the p2
    * @return the shortest distance
    */
-  public int getShortestPathDistance(Point p1, Point p2) {
-    return roadModel.get().getShortestPathTo(p1, p2).size();
+  public static int getShortestPathDistance(CollisionGraphRoadModel roadModel,
+      Point p1, Point p2) {
+    return roadModel.getShortestPathTo(p1, p2).size();
   }
   
   /**
@@ -371,15 +373,10 @@ public class VirtualEnvironment implements TickListener {
     }
     
     changeGraphStructure();
-    
-//    if (timeLapse.getStartTime() % 50000 == 0 && numOfAgents < 100) {
-//      addAgent(numOfAgents);
-//      numOfAgents++;
-//    }
   }
   
   public void changeGraphStructure() {
-    if (r.nextInt(100) + 1 <= Setting.DYNAMIC_RATE) {
+    if (r.nextInt(100) + 1 <= dynamicRate) {
       final Point randNode = roadModel.get().getGraph().getRandomNode(r);
       Collection<Point> nextNodes = roadModel.get().getGraph()
           .getOutgoingConnections(randNode);
@@ -389,9 +386,5 @@ public class VirtualEnvironment implements TickListener {
           .removeConnection(randNode,
               (Point) nextNodes.toArray()[r.nextInt(nextNodes.size())]);
     }
-  }
-  
-  public void addAgent(int agentID) {
-    simulator.register(new AGV(simulator.getRandomGenerator(), this, agentID));
   }
 }
