@@ -20,59 +20,31 @@ import com.google.common.collect.Table;
 
 public class RoutingProblem {
 
-  private double vehicleLength;
-  private int timeWindow;
-  private int minTimeSteps;
-  private int explorationFreq;
-  private int intentionFreq;
-  private int intentionChangingThreshold;
-  private int pheromoneLifeTime;
-  private int mapSizeX;
-  private int mapSizeY;
-  private int blockSize;
-  private int numberOfAgents;
-  private int dynamicRate;
-  private int pathLength;
-  private long stopTime;
+  private Setting setting;
 
-  RoutingProblem(double vehicleLength, int timeWindow, int minTimeSteps,
-      int explorationFreq, int intentionFreq, int intentionChangingThreshold,
-      int pheromoneLifeTime, int mapSizeX, int mapSizeY, int blockSize,
-      int numberOfAgents, int dynamicRate, int pathLength, long stopTime) {
-    this.vehicleLength = vehicleLength;
-    this.timeWindow = timeWindow;
-    this.minTimeSteps = minTimeSteps;
-    this.explorationFreq = explorationFreq;
-    this.intentionFreq = intentionFreq;
-    this.intentionChangingThreshold = intentionChangingThreshold;
-    this.pheromoneLifeTime = pheromoneLifeTime;
-    this.mapSizeX = mapSizeX;
-    this.mapSizeY = mapSizeY;
-    this.blockSize = blockSize;
-    this.numberOfAgents = numberOfAgents;
-    this.dynamicRate = dynamicRate;
-    this.pathLength = pathLength;
-    this.stopTime = stopTime;
+  RoutingProblem(Setting setting) {
+    this.setting = setting;
   }
 
   public void run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph2()).setVehicleLength(vehicleLength)
+        .builder(createGraph2()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
         .build();
 
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
-        collisionGraphRoadModel, sim, dynamicRate, timeWindow,
-        pheromoneLifeTime);
+        collisionGraphRoadModel, sim, setting.getDynamicRate(),
+        setting.getTimeWindow(), setting.getPheromoneLifeTime());
     sim.addTickListener(virtualEnvironment);
 
-    for (int i = 0; i < numberOfAgents; i++) {
+    for (int i = 0; i < setting.getNumberOfAgents(); i++) {
       sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment, i,
-          minTimeSteps, explorationFreq, intentionFreq,
-          intentionChangingThreshold, pathLength));
+          setting.getMinTimeSteps(), setting.getExplorationFreq(), setting
+              .getIntentionFreq(), setting.getIntentionChangingThreshold(),
+          setting.getPathLength()));
     }
     
     sim.addTickListener(new TickListener() {
@@ -82,7 +54,7 @@ public class RoutingProblem {
 
       @Override
       public void afterTick(TimeLapse timeLapse) {
-        if (timeLapse.getTime() >= stopTime) {
+        if (timeLapse.getTime() >= setting.getStopTime()) {
           sim.stop();
         }
       }
@@ -103,8 +75,8 @@ public class RoutingProblem {
         .builder();
     for (int c = 0; c < cols; c++) {
       for (int r = 0; r < rows; r++) {
-        builder.put(r, c, new Point(offset.x + c * vehicleLength * 3,
-            offset.y + r * vehicleLength * 3));
+        builder.put(r, c, new Point(offset.x + c * setting.getVehicleLength()
+            * 3, offset.y + r * setting.getVehicleLength() * 3));
       }
     }
     return builder.build();
@@ -114,11 +86,11 @@ public class RoutingProblem {
     final Graph<LengthData> g = new TableGraph<>();
 
     final Table<Integer, Integer, Point> matrix = createMatrix(
-        mapSizeX, mapSizeY, new Point(0, 0));
+        setting.getMapSizeX(), setting.getMapSizeY(), new Point(0, 0));
 
     int i = 0;
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
-      if (i % blockSize == 0) {
+      if (i % setting.getBlockSize() == 0) {
         Graphs.addBiPath(g, column.values());
       }
       i++;
@@ -126,7 +98,7 @@ public class RoutingProblem {
 
     int j = 0;
     for (final Map<Integer, Point> row : matrix.rowMap().values()) {
-      if (j % blockSize == 0) {
+      if (j % setting.getBlockSize() == 0) {
         Graphs.addBiPath(g, row.values());
       }
       j++;
@@ -178,103 +150,5 @@ public class RoutingProblem {
     Graphs.addBiPath(g, matrix.row(5).values());
 
     return new ListenableGraph<>(g);
-  }
-
-  public static class Builder {
-    private double vehicleLength = 2d;
-    private int timeWindow = 32;
-    private int minTimeSteps = 16;
-    private int explorationFreq = 5;
-    private int intentionFreq = 1;
-    private int intentionChangingThreshold = 70;
-    private int pheromoneLifeTime = 10;
-    private int mapSizeX = 16;
-    private int mapSizeY = 16;
-    private int blockSize = 1;
-    private int numberOfAgents = 10;
-    private int dynamicRate = 0;
-    private int pathLength = 8;
-    private long stopTime = 1000000;
-    
-    public Builder() {
-      
-    }
-
-    public Builder setVehicleLength(double vehicleLength) {
-      this.vehicleLength = vehicleLength;
-      return this;
-    }
-
-    public Builder setTimeWindow(int timeWindow) {
-      this.timeWindow = timeWindow;
-      return this;
-    }
-
-    public Builder setMinTimeSteps(int minTimeSteps) {
-      this.minTimeSteps = minTimeSteps;
-      return this;
-    }
-
-    public Builder setExplorationFreq(int explorationFreq) {
-      this.explorationFreq = explorationFreq;
-      return this;
-    }
-
-    public Builder setIntentionFreq(int intentionFreq) {
-      this.intentionFreq = intentionFreq;
-      return this;
-    }
-
-    public Builder setIntentionChangingThreshold(int intentionChangingThreshold) {
-      this.intentionChangingThreshold = intentionChangingThreshold;
-      return this;
-    }
-
-    public Builder setPheromoneLifeTime(int pheromoneLifeTime) {
-      this.pheromoneLifeTime = pheromoneLifeTime;
-      return this;
-    }
-
-    public Builder setMapSizeX(int mapSizeX) {
-      this.mapSizeX = mapSizeX;
-      return this;
-    }
-
-    public Builder setMapSizeY(int mapSizeY) {
-      this.mapSizeY = mapSizeY;
-      return this;
-    }
-
-    public Builder setBlockSize(int blockSize) {
-      this.blockSize = blockSize;
-      return this;
-    }
-
-    public Builder setNumberOfAgents(int numberOfAgents) {
-      this.numberOfAgents = numberOfAgents;
-      return this;
-    }
-
-    public Builder setDynamicRate(int dynamicRate) {
-      this.dynamicRate = dynamicRate;
-      return this;
-    }
-
-    public Builder setPathLength(int pathLength) {
-      this.pathLength = pathLength;
-      return this;
-    }
-
-    public Builder setStopTime(long stopTime) {
-      this.stopTime = stopTime;
-      return this;
-    }
-
-    public RoutingProblem build() {
-      return new RoutingProblem(vehicleLength, timeWindow, minTimeSteps,
-          explorationFreq, intentionFreq, intentionChangingThreshold,
-          pheromoneLifeTime, mapSizeX, mapSizeY, blockSize, numberOfAgents,
-          dynamicRate, pathLength, stopTime);
-    }
   }
 }
