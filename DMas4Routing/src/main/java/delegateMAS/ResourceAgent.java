@@ -73,7 +73,7 @@ public class ResourceAgent {
     }
   }
   
-  public void refesh() {
+  public void evolve() {
     for (Reservation resv : reservations) {
       resv.refesh();
     }
@@ -86,7 +86,7 @@ public class ResourceAgent {
       }
     }
     
-    deadlockWarning.refesh();
+    deadlockWarning.evolve();
   }
   
   public void setDeadlockWarning(int agentID) {

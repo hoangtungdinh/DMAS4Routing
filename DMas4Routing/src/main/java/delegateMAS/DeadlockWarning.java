@@ -32,7 +32,7 @@ public class DeadlockWarning {
     }
   }
   
-  public void refesh() {
+  public void evolve() {
     if (lifeTime > 0) {
       lifeTime--;
     } else {

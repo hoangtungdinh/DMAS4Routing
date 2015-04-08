@@ -108,10 +108,11 @@ public class VirtualEnvironment implements TickListener {
      // if reached required length, then return
         return new Route(route.getRoute());
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
-        // if reached goal then return
+        // if reached goal, extend to route to fit the time window, then return
+        // TODO evaluate that extend reached route is necessary or not
         ArrayList<Point> rawRoute = exploreHopsAhead(agentID, route.getRoute(),
             currentTime, length);
-        return new Route(rawRoute);
+        return new Route(route.getRoute());
       }
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();
@@ -177,9 +178,10 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
-//    ArrayList<Point> rawRoute = exploreHopsAhead(agentID, firstRoute,
-//        currentTime, length);
-    
+    if (longestRoute.getRoute().size() == 1) {
+      ResourceAgent nodeAgent = nodeAgents.get(longestRoute.getRoute().get(0));
+      nodeAgent.setDeadlockWarning(agentID);
+    }
     return new Route(longestRoute.getRoute());
   }
   
@@ -264,11 +266,6 @@ public class VirtualEnvironment implements TickListener {
           }
         }
       }
-    }
-    
-    if (longestRoute.size() == 1) {
-      ResourceAgent nodeAgent = nodeAgents.get(longestRoute.get(0));
-      nodeAgent.setDeadlockWarning(agentID);
     }
     
     return longestRoute;
@@ -369,12 +366,12 @@ public class VirtualEnvironment implements TickListener {
   @Override
   public void afterTick(TimeLapse timeLapse) {
     for (Map.Entry<Point, ResourceAgent> entry : nodeAgents.entrySet()) {
-      entry.getValue().refesh();
+      entry.getValue().evolve();
     }
 
     for (Map.Entry<Connection<? extends ConnectionData>, ResourceAgent> entry : edgeAgents
         .entrySet()) {
-      entry.getValue().refesh();
+      entry.getValue().evolve();
     }
     
     changeGraphStructure();
