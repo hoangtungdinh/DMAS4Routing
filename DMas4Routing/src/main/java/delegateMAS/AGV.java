@@ -28,7 +28,11 @@ class AGV implements TickListener, MovingRoadUser {
   private int explorationFreq;
   private int intentionFreq;
   private int intentionChangingThreshold;
+  @SuppressWarnings("unused")
   private int pathLength;
+  private int idealLength = 0;
+  private int realLength = 0;
+  private int distance = 0;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID,
       int minTimeSteps, int explorationFreq, int intentionFreq,
@@ -64,9 +68,10 @@ class AGV implements TickListener, MovingRoadUser {
   void nextDestination() {
     do {
       destination = Optional.of(roadModel.get().getRandomPosition(rng));
-    } while (destination.get().equals(getPosition())
-        || VirtualEnvironment.getShortestPathDistance(roadModel.get(), getPosition(),
-            destination.get()) == pathLength);
+    } while (destination.get().equals(getPosition()));
+
+    distance = VirtualEnvironment.getShortestPathDistance(roadModel.get(),
+        getPosition(), destination.get()) - 1;
   }
 
   @Override
@@ -77,6 +82,9 @@ class AGV implements TickListener, MovingRoadUser {
       nextDestination();
       exploreAndBook(startTime);
     } else if (getPosition().equals(destination.get())) {
+      success++;
+      realLength = (int) timeLapse.getStartTime() / 1000;
+      idealLength += distance;
       nextDestination();
       exploreAndBook(startTime);
     } else if (path.size() < minTimeSteps) {
@@ -180,5 +188,17 @@ class AGV implements TickListener, MovingRoadUser {
   
   public int getNumberOfSuccesses() {
     return success;
+  }
+  
+  public int getAgentID() {
+    return agentID;
+  }
+  
+  public int getIdealLength() {
+    return idealLength;
+  }
+  
+  public int getRealLength() {
+    return realLength;
   }
 }

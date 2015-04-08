@@ -3,8 +3,6 @@ package delegateMAS;
 import java.util.Map;
 
 import com.github.rinde.rinsim.core.Simulator;
-import com.github.rinde.rinsim.core.TickListener;
-import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
 import com.github.rinde.rinsim.geom.Graph;
 import com.github.rinde.rinsim.geom.Graphs;
@@ -21,15 +19,19 @@ import com.google.common.collect.Table;
 public class RoutingProblem {
 
   private Setting setting;
+  private String fileID;
+  private boolean viewOn;
 
-  RoutingProblem(Setting setting) {
+  public RoutingProblem(Setting setting, String fileID, boolean viewOn) {
     this.setting = setting;
+    this.fileID = fileID;
+    this.viewOn = viewOn;
   }
 
   public void run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph2()).setVehicleLength(setting.getVehicleLength())
+        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
@@ -47,26 +49,20 @@ public class RoutingProblem {
           setting.getPathLength()));
     }
     
-    sim.addTickListener(new TickListener() {
-      @Override
-      public void tick(TimeLapse timeLapse) {
-      }
+    sim.addTickListener(new Result(collisionGraphRoadModel, sim, setting,
+        fileID));
 
-      @Override
-      public void afterTick(TimeLapse timeLapse) {
-        if (timeLapse.getTime() >= setting.getStopTime()) {
-          sim.stop();
-        }
-      }
-    });
-
-    View.create(sim)
-        .with(
-            WarehouseRenderer.builder().setMargin(2).showNodes()
-                .showNodeOccupancy())
-        .with(
-            AGVRenderer.builder().useDifferentColorsForVehicles()
-                .showVehicleOrigin().showVehicleCreationNumber()).show();
+    if (viewOn) {
+      View.create(sim)
+      .with(
+          WarehouseRenderer.builder().setMargin(2).showNodes()
+              .showNodeOccupancy())
+      .with(
+          AGVRenderer.builder().useDifferentColorsForVehicles()
+              .showVehicleOrigin().showVehicleCreationNumber()).show();
+    } else {
+      sim.start();
+    }
   }
 
   public ImmutableTable<Integer, Integer, Point> createMatrix(int cols,

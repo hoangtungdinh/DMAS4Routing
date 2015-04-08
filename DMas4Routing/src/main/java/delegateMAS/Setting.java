@@ -109,7 +109,8 @@ public class Setting {
         .append("numberOfAgents: " + numberOfAgents + "\n")
         .append("dynamicRate: " + dynamicRate + "\n")
         .append("pathLength: " + pathLength + "\n")
-        .append("stopTime: " + stopTime + "\n").toString();
+        .append("stopTime: " + stopTime + "\n")
+        .toString();
   }
 
   public static class SettingBuilder {
