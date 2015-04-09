@@ -20,23 +20,20 @@ public class ResourceAgent {
    * Checks if a time slot is available.
    *
    * @param agentID the agent id
+   * @param priority the priority
    * @param time the time
    * @return true, if is available
    */
-  public boolean isAvailable(int agentID, long time) {
+  public boolean isAvailable(int agentID, int priority, long time) {
     if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
       return false;
     } else {
       for (Reservation resv : reservations) {
-        // if time slot is reserved
-        if (resv.getReservedTime() == time) {
-          if (resv.getAgentID() != agentID) {
-            // if other agent booked, then false
-            return false;
-          } else {
-            // if this agent booked, then true
-            return true;
-          }
+        // if time slot is reserved by another agent with lower priority, then
+        // false
+        if (resv.getReservedTime() == time && resv.getAgentID() != agentID
+            && resv.getPriority() <= priority) {
+          return false;
         }
       }
       // if time slot hasn't been reserved, then true
@@ -48,28 +45,36 @@ public class ResourceAgent {
    * Book resource.
    *
    * @param agentID the agent id
+   * @param priority the priority
    * @param time the time
    * @return true, if book successfully
    */
-  public boolean bookResource(int agentID, long time) {
+  public boolean bookResource(int agentID, int priority, long time) {
     if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
       return false;
     } else {
+      Reservation backupResv = null;
       for (Reservation resv : reservations) {
         // if time slot is reserved
         if (resv.getReservedTime() == time) {
-          if (resv.getAgentID() != agentID) {
+          if (resv.getAgentID() != agentID && resv.getPriority() <= priority) {
             // if other agent booked, then false
             return false;
-          } else {
-            // if this agent booked, then true
-            resv.setLifeTime(pheromoneLifeTime);
-            return true;
+          } else if (resv.getAgentID() == agentID) {
+            backupResv = resv;
           }
         }
       }
-      // if time slot hasn't been reserved, then true
-      reservations.add(new Reservation(time, agentID, pheromoneLifeTime));
+
+      if (backupResv == null) {
+        // if time slot hasn't been reserved
+        reservations.add(new Reservation(time, agentID, priority,
+            pheromoneLifeTime));
+      } else {
+        // if this agent booked at same priority, then true
+        backupResv.updateReservation(priority, pheromoneLifeTime);
+      }
+      
       return true;
     }
   }

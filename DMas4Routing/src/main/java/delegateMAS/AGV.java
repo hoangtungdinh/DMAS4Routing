@@ -148,7 +148,7 @@ class AGV implements TickListener, MovingRoadUser {
    */
   public Route explore(long startTime) {
     resetExpCounter();
-    final Route exploredRoute = virtualEnvironment.explore(agentID,
+    final Route exploredRoute = virtualEnvironment.explore(agentID, success,
         getPosition(), destination.get(), startTime);
     return exploredRoute;
   }
@@ -161,9 +161,9 @@ class AGV implements TickListener, MovingRoadUser {
    */
   public boolean bookResource(long startTime) {
     resetIntCounter();
-    final boolean bookingResponse = virtualEnvironment.bookResource(
-        agentID, new ArrayList<Point>(path), getPosition(), startTime);
-    
+    final boolean bookingResponse = virtualEnvironment.bookResource(agentID,
+        success, new ArrayList<Point>(path), getPosition(), startTime);
+
     return bookingResponse;
   }
   

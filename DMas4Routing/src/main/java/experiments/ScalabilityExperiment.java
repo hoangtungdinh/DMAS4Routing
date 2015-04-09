@@ -6,7 +6,7 @@ import delegateMAS.Setting;
 public class ScalabilityExperiment {
 
   public static void main(String[] args) {
-    final int numberOfAgents = 150;
+    final int numberOfAgents = 2000;
     Setting setting = new Setting.SettingBuilder()
     .setTimeWindow(30)
     .setMinTimeSteps(10)
@@ -14,8 +14,8 @@ public class ScalabilityExperiment {
     .setIntentionFreq(15)
     .setIntentionChangingThreshold(70)
     .setPheromoneLifeTime(20)
-    .setMapSizeX(32)
-    .setMapSizeY(32)
+    .setMapSizeX(120)
+    .setMapSizeY(120)
     .setBlockSize(1)
     .setNumberOfAgents(numberOfAgents)
     .setDynamicRate(0)
