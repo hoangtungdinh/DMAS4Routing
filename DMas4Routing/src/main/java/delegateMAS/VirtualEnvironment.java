@@ -100,10 +100,10 @@ public class VirtualEnvironment implements TickListener {
           longestRoute = new Route(route.getRoute());
         }
       }
-      
+
       final Point lastNode = route.getLastNode();
       if (route.getRoute().size() > length) {
-     // if reached required length, then return
+        // if reached required length, then return
         return new Route(route.getRoute());
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
         // if reached goal, extend to route to fit the time window, then returns
