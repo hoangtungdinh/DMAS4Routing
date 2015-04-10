@@ -1,6 +1,10 @@
 package delegateMAS;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
@@ -28,10 +32,10 @@ public class RoutingProblem {
     this.viewOn = viewOn;
   }
 
-  public void run() {
+  public Result run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
+        .builder(createGraph3()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
@@ -49,12 +53,12 @@ public class RoutingProblem {
           setting.getPathLength()));
     }
     
-    sim.addTickListener(new Result(collisionGraphRoadModel, sim, setting,
-        fileID));
+    Result result = new Result(collisionGraphRoadModel, sim, setting, fileID);
+    sim.addTickListener(result);
 
     if (viewOn) {
       View.create(sim)
-      .setFullScreen()
+//      .setFullScreen()
       .with(
           WarehouseRenderer.builder().setMargin(2).showNodes()
               .showNodeOccupancy())
@@ -64,6 +68,8 @@ public class RoutingProblem {
     } else {
       sim.start();
     }
+    
+    return result;
   }
 
   public ImmutableTable<Integer, Integer, Point> createMatrix(int cols,
@@ -146,6 +152,35 @@ public class RoutingProblem {
     Graphs.addBiPath(g, matrix.row(setting.getMapSizeY() / 2).values());
     Graphs.addBiPath(g, matrix.row((setting.getMapSizeY() / 2) - 1).values());
 
+    return new ListenableGraph<>(g);
+  }
+  
+  public ListenableGraph<LengthData> createGraph3() {
+    final Graph<LengthData> g = new TableGraph<>();
+
+    final Table<Integer, Integer, Point> matrix = createMatrix(
+        setting.getMapSizeX(), setting.getMapSizeY(), new Point(0, 0));
+
+    for (final Map<Integer, Point> column : matrix.columnMap().values()) {
+      Graphs.addBiPath(g, column.values());
+    }
+
+    for (final Map<Integer, Point> row : matrix.rowMap().values()) {
+      Graphs.addBiPath(g, row.values());
+    }
+    
+    Set<Point> nodeSet = g.getNodes();
+    List<Point> nodeList = new ArrayList<Point>(nodeSet);
+    Collections.shuffle(nodeList);
+    
+    int numOfRemovedNodes = g.getNumberOfNodes() * 20 / 100;
+    
+    List<Point> removedNodes = nodeList.subList(0, numOfRemovedNodes);
+    
+    for (Point node : removedNodes) {
+      g.removeNode(node);
+    }
+    
     return new ListenableGraph<>(g);
   }
 }

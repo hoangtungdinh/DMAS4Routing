@@ -107,7 +107,7 @@ public class VirtualEnvironment implements TickListener {
         return new Route(route.getRoute());
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
         // if reached goal, extend to route to fit the time window, then returns
-        ArrayList<Point> rawRoute = exploreHopsAhead(agentID, priority,
+        ArrayList<Point> rawRoute = exploreHopsAhead(agentID, priority + 1,
             route.getRoute(), currentTime, length);
         return new Route(rawRoute, route.getRoute().size());
       }
@@ -201,6 +201,8 @@ public class VirtualEnvironment implements TickListener {
   public Double getEstimatedCost(Route route, Point goal) {
     double gValue = route.getRoute().size();
     double hValue = getHammingDistance(route.getLastNode(), goal);
+    // double hValue = getShortestPathDistance(roadModel.get(),
+    // route.getLastNode(), goal);
     return (gValue + hValue - 1);
   }
   

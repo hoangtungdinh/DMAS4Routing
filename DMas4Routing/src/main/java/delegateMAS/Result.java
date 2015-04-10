@@ -18,12 +18,14 @@ import com.github.rinde.rinsim.core.model.road.RoadModel;
 import com.github.rinde.rinsim.core.model.road.RoadUser;
 
 public class Result implements TickListener {
-  
+
   private RoadModel roadModel;
   private Setting setting;
   private Simulator simulator;
   private String fileID;
-  
+  private int numOfFailures = 0;
+  private double averageLength;
+
   public Result(CollisionGraphRoadModel roadModel, Simulator simulator,
       Setting setting, String fileID) {
     this.roadModel = roadModel;
@@ -33,7 +35,8 @@ public class Result implements TickListener {
   }
 
   @Override
-  public void tick(TimeLapse timeLapse) {}
+  public void tick(TimeLapse timeLapse) {
+  }
 
   @Override
   public void afterTick(TimeLapse timeLapse) {
@@ -44,7 +47,7 @@ public class Result implements TickListener {
       simulator = null;
     }
   }
-  
+
   public void print() {
     String date = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
         .format(new Date());
@@ -65,6 +68,9 @@ public class Result implements TickListener {
       for (RoadUser roadUser : roadUserList) {
         AGV agv = (AGV) roadUser;
         final int success = agv.getNumberOfSuccesses();
+        if (success == 0) {
+          numOfFailures++;
+        }
         if (best < success) {
           best = success;
         }
@@ -85,14 +91,15 @@ public class Result implements TickListener {
         totalIdealLength += agv.getIdealLength();
         totalRealLength += agv.getRealLength();
       }
+      printWriter.println("Number of failures: " + numOfFailures);
       printWriter.println("Best: " + best);
       printWriter.println("Worst: " + worst);
       printWriter.println("Total: " + total);
       printWriter.println("Average successes: "
           + (((double) total) / roadUserList.size()));
+      averageLength = ((double) totalRealLength) / roadUserList.size();
       printWriter.println("Average real length: "
-          + (new DecimalFormat("##.00").format(((double) totalRealLength)
-              / roadUserList.size())));
+          + (new DecimalFormat("##.00").format(averageLength)));
       printWriter.println("Average ideal length: "
           + (new DecimalFormat("##.00").format(((double) totalIdealLength)
               / roadUserList.size())));
@@ -104,5 +111,13 @@ public class Result implements TickListener {
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
+  }
+  
+  public int getNumOfFailures() {
+    return numOfFailures;
+  }
+  
+  public double getAverageLength() {
+    return averageLength;
   }
 }
