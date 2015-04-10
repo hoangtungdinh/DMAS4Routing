@@ -93,7 +93,18 @@ class AGV implements TickListener, MovingRoadUser {
     } else {
       if (expCounter == explorationFreq) {
         final Route route = explore(startTime);
-        if (pathQuality > 0
+        if (pathQuality < 0) {
+          if (route.getDistanceToGoal() > 0) {
+            setPath(route);
+            bookResource(startTime);
+          } else if (route.getRoute().size() > path.size()
+              && VirtualEnvironment.getHammingDistance(
+                  route.getRoute().get(path.size() - 1), destination.get()) < VirtualEnvironment
+                  .getHammingDistance(path.getLast(), destination.get())) {
+            setPath(route);
+            bookResource(startTime);
+          }
+        } else if (pathQuality > 0
             && ((route.getDistanceToGoal() * 100) / pathQuality) < intentionChangingThreshold) {
           setPath(route);
           bookResource(startTime);

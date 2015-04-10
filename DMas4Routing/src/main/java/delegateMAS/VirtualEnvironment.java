@@ -93,9 +93,11 @@ public class VirtualEnvironment implements TickListener {
       // select and remove the first route in the queue
       final Route route = routeQueue.remove(routeQueue.firstKey());
 
-      if (route.getRoute().size() > longestRoute.getRoute().size()) {
+      if (getHammingDistance(route.getLastNode(), goal) < getHammingDistance(
+          longestRoute.getLastNode(), goal)) {
         longestRoute = new Route(route.getRoute());
-      } else if (route.getRoute().size() == longestRoute.getRoute().size()) {
+      } else if (getHammingDistance(route.getLastNode(), goal) == getHammingDistance(
+          longestRoute.getLastNode(), goal)) {
         if (r.nextBoolean()) {
           longestRoute = new Route(route.getRoute());
         }
@@ -104,8 +106,7 @@ public class VirtualEnvironment implements TickListener {
       final Point lastNode = route.getLastNode();
       if (route.getRoute().size() > length) {
         // if reached required length, then return
-        return new Route(route.getRoute(),
-            (int) (getEstimatedCost(route, goal) * 100));
+        return new Route(route.getRoute());
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
         // if reached goal, extend to route to fit the time window, then returns
         ArrayList<Point> rawRoute = exploreHopsAhead(agentID, priority,
@@ -189,8 +190,7 @@ public class VirtualEnvironment implements TickListener {
       ResourceAgent nodeAgent = nodeAgents.get(longestRoute.getRoute().get(0));
       nodeAgent.setDeadlockWarning(agentID);
     }
-    return new Route(longestRoute.getRoute(), (int) (getEstimatedCost(
-        longestRoute, goal) * 100));
+    return new Route(longestRoute.getRoute());
   }
   
   /**
