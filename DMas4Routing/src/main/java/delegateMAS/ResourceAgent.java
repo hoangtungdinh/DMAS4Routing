@@ -1,17 +1,17 @@
 package delegateMAS;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 
 public class ResourceAgent {
 
-  private List<Reservation> reservations;
+  private HashMap<Long, Reservation> reservations;
   private DeadlockWarning deadlockWarning;
   private int pheromoneLifeTime;
   
   public ResourceAgent(int pheromoneLifeTime) {
-    reservations = new ArrayList<Reservation>();
+    reservations = new HashMap<>();
     deadlockWarning = new DeadlockWarning(0, false, 0);
     this.pheromoneLifeTime = pheromoneLifeTime;
   }
@@ -27,17 +27,19 @@ public class ResourceAgent {
   public boolean isAvailable(int agentID, int priority, long time) {
     if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
       return false;
-    } else {
-      for (Reservation resv : reservations) {
-        // if time slot is reserved by another agent with lower priority, then
-        // false
-        if (resv.getReservedTime() == time && resv.getAgentID() != agentID
-            && resv.getPriority() <= priority) {
-          return false;
-        }
-      }
-      // if time slot hasn't been reserved, then true
+    }
+
+    Reservation resv = reservations.get(time);
+
+    if (resv == null) {
+      // no reservation at the time slot yet
       return true;
+    } else {
+      if (resv.getAgentID() != agentID && resv.getPriority() <= priority) {
+        return false;
+      } else {
+        return true;
+      }
     }
   }
   
@@ -52,41 +54,34 @@ public class ResourceAgent {
   public boolean bookResource(int agentID, int priority, long time) {
     if (deadlockWarning.isDeadlock() && deadlockWarning.getAgentID() != agentID) {
       return false;
-    } else {
-      Reservation backupResv = null;
-      for (Reservation resv : reservations) {
-        // if time slot is reserved
-        if (resv.getReservedTime() == time) {
-          if (resv.getAgentID() != agentID && resv.getPriority() <= priority) {
-            // if other agent booked, then false
-            return false;
-          } else if (resv.getAgentID() == agentID) {
-            backupResv = resv;
-          }
-        }
-      }
+    }
 
-      if (backupResv == null) {
-        // if time slot hasn't been reserved
-        reservations.add(new Reservation(time, agentID, priority,
-            pheromoneLifeTime));
-      } else {
-        // if this agent booked at same priority, then true
-        backupResv.updateReservation(priority, pheromoneLifeTime);
-      }
-      
+    final Reservation resv = reservations.get(time);
+
+    if (resv == null) {
+      // no reservation at the time slot yet
+      reservations.put(time, new Reservation(agentID, priority,
+          pheromoneLifeTime));
       return true;
+    } else {
+      if (resv.getAgentID() != agentID && resv.getPriority() <= priority) {
+        // if already booked by another agent with lower priority then false
+        return false;
+      } else {
+        reservations.put(time, new Reservation(agentID, priority,
+            pheromoneLifeTime));
+        return true;
+      }
     }
   }
   
   public void evolve() {
-    for (Reservation resv : reservations) {
-      resv.refesh();
-    }
+    Iterator<Map.Entry<Long, Reservation>> iterator = reservations.entrySet().iterator();
     
-    Iterator<Reservation> iterator = reservations.iterator();
     while (iterator.hasNext()) {
-      final Reservation resv = iterator.next();
+      Map.Entry<Long, Reservation> entry = iterator.next();
+      final Reservation resv = entry.getValue();
+      resv.refesh();
       if (resv.getLifeTime() == 0) {
         iterator.remove();
       }

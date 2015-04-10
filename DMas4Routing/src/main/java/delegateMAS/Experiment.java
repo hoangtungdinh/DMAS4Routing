@@ -1,29 +1,27 @@
-package experiments;
+package delegateMAS;
 
-import delegateMAS.RoutingProblem;
-import delegateMAS.Setting;
 
-public class ScalabilityExperiment {
+public class Experiment {
 
   public static void main(String[] args) {
-    final int numberOfAgents = 2000;
+    final int intention = 1;
     Setting setting = new Setting.SettingBuilder()
-    .setTimeWindow(30)
+    .setTimeWindow(50)
     .setMinTimeSteps(10)
     .setExplorationFreq(5)
-    .setIntentionFreq(15)
+    .setIntentionFreq(intention)
     .setIntentionChangingThreshold(70)
-    .setPheromoneLifeTime(20)
-    .setMapSizeX(120)
-    .setMapSizeY(120)
+    .setPheromoneLifeTime(intention + 1)
+    .setMapSizeX(100)
+    .setMapSizeY(100)
     .setBlockSize(1)
-    .setNumberOfAgents(numberOfAgents)
+    .setNumberOfAgents(1000)
     .setDynamicRate(0)
     .setStopTime(1000 * 1000)
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "-numAgent-" + numberOfAgents, false);
+        "-Ifreq-" + intention, false);
     routingProblem.run();
   }
 }

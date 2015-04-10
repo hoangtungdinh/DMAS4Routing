@@ -19,9 +19,8 @@ public class Route {
     this.distanceToGoal = distanceToGoal;
   }
   
-  @SuppressWarnings("unchecked")
   public ArrayList<Point> getRoute() {
-    return (ArrayList<Point>) route.clone();
+    return new ArrayList<>(route);
   }
   
   public int getDistanceToGoal() {

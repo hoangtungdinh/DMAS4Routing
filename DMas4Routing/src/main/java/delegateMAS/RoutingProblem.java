@@ -54,6 +54,7 @@ public class RoutingProblem {
 
     if (viewOn) {
       View.create(sim)
+      .setFullScreen()
       .with(
           WarehouseRenderer.builder().setMargin(2).showNodes()
               .showNodeOccupancy())
@@ -135,15 +136,15 @@ public class RoutingProblem {
   public ListenableGraph<LengthData> createGraph2() {
     final Graph<LengthData> g = new TableGraph<>();
 
-    final Table<Integer, Integer, Point> matrix = createMatrix(10, 10,
-        new Point(0, 0));
+    final Table<Integer, Integer, Point> matrix = createMatrix(
+        setting.getMapSizeX(), setting.getMapSizeY(), new Point(0, 0));
 
     for (final Map<Integer, Point> column : matrix.columnMap().values()) {
       Graphs.addBiPath(g, column.values());
     }
 
-    Graphs.addBiPath(g, matrix.row(4).values());
-    Graphs.addBiPath(g, matrix.row(5).values());
+    Graphs.addBiPath(g, matrix.row(setting.getMapSizeY() / 2).values());
+    Graphs.addBiPath(g, matrix.row((setting.getMapSizeY() / 2) - 1).values());
 
     return new ListenableGraph<>(g);
   }

@@ -87,6 +87,7 @@ public class Result implements TickListener {
       }
       printWriter.println("Best: " + best);
       printWriter.println("Worst: " + worst);
+      printWriter.println("Total: " + total);
       printWriter.println("Average successes: "
           + (((double) total) / roadUserList.size()));
       printWriter.println("Average real length: "
