@@ -1,6 +1,16 @@
 package delegateMAS;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
@@ -31,7 +41,7 @@ public class RoutingProblem {
   public void run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
+        .builder(createGraph4()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
@@ -145,6 +155,85 @@ public class RoutingProblem {
 
     Graphs.addBiPath(g, matrix.row(setting.getMapSizeY() / 2).values());
     Graphs.addBiPath(g, matrix.row((setting.getMapSizeY() / 2) - 1).values());
+
+    return new ListenableGraph<>(g);
+  }
+  
+  public ListenableGraph<LengthData> createGraph3() {
+    final Graph<LengthData> g = new TableGraph<>();
+
+    final Table<Integer, Integer, Point> matrix = createMatrix(
+        setting.getMapSizeX(), setting.getMapSizeY(), new Point(0, 0));
+
+    for (final Map<Integer, Point> column : matrix.columnMap().values()) {
+      Graphs.addBiPath(g, column.values());
+    }
+
+    for (final Map<Integer, Point> row : matrix.rowMap().values()) {
+      Graphs.addBiPath(g, row.values());
+    }
+
+    Set<Point> nodeSet = g.getNodes();
+    List<Point> nodeList = new ArrayList<Point>(nodeSet);
+    Collections.shuffle(nodeList);
+
+    int numOfRemovedNodes = g.getNumberOfNodes() * 20 / 100;
+
+    List<Point> removedNodes = new ArrayList<>(nodeList.subList(0, numOfRemovedNodes));
+
+    for (Point node : removedNodes) {
+      g.removeNode(node);
+    }
+    
+    BenchmarkMap map = new BenchmarkMap(removedNodes);
+    
+    try {
+      ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+          new FileOutputStream("map.txt"));
+      objectOutputStream.writeObject(map);
+      objectOutputStream.close();
+      
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return new ListenableGraph<>(g);
+  }
+  
+  public ListenableGraph<LengthData> createGraph4() {
+    final Graph<LengthData> g = new TableGraph<>();
+
+    final Table<Integer, Integer, Point> matrix = createMatrix(
+        setting.getMapSizeX(), setting.getMapSizeY(), new Point(0, 0));
+
+    for (final Map<Integer, Point> column : matrix.columnMap().values()) {
+      Graphs.addBiPath(g, column.values());
+    }
+
+    for (final Map<Integer, Point> row : matrix.rowMap().values()) {
+      Graphs.addBiPath(g, row.values());
+    }
+
+    BenchmarkMap map;
+    
+    FileInputStream fin;
+    try {
+      fin = new FileInputStream("map.txt");
+      ObjectInputStream ois = new ObjectInputStream(fin);
+      map = (BenchmarkMap) ois.readObject();
+      fin.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      map = null;
+    }
+
+    List<Point> removedNodes = new ArrayList<>(map.getRemovedNodes());
+
+    for (Point node : removedNodes) {
+      g.removeNode(node);
+    }
 
     return new ListenableGraph<>(g);
   }
