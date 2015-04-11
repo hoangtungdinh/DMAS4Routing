@@ -15,11 +15,12 @@ public class Setting {
   private int dynamicRate;
   private int pathLength;
   private long stopTime;
+  private int failureRate;
 
   public Setting(double vehicleLength, int timeWindow, int minTimeSteps,
       int explorationFreq, int intentionFreq, int intentionChangingThreshold,
       int pheromoneLifeTime, int mapSizeX, int mapSizeY, int blockSize,
-      int numberOfAgents, int dynamicRate, int pathLength, long stopTime) {
+      int numberOfAgents, int dynamicRate, int pathLength, long stopTime, int failureRate) {
     this.vehicleLength = vehicleLength;
     this.timeWindow = timeWindow;
     this.minTimeSteps = minTimeSteps;
@@ -34,6 +35,7 @@ public class Setting {
     this.dynamicRate = dynamicRate;
     this.pathLength = pathLength;
     this.stopTime = stopTime;
+    this.failureRate = failureRate;
   }
 
   public double getVehicleLength() {
@@ -91,6 +93,10 @@ public class Setting {
   public long getStopTime() {
     return stopTime;
   }
+  
+  public int getFailureRate() {
+    return failureRate;
+  }
 
   @Override
   public String toString() {
@@ -110,6 +116,7 @@ public class Setting {
         .append("dynamicRate: " + dynamicRate + "\n")
         .append("pathLength: " + pathLength + "\n")
         .append("stopTime: " + stopTime + "\n")
+        .append("failureRate: " + failureRate + "\n")
         .toString();
   }
 
@@ -128,6 +135,7 @@ public class Setting {
     private int dynamicRate = 0;
     private int pathLength = 8;
     private long stopTime = 1000000;
+    private int failureRate = 0;
 
     public SettingBuilder() {
 
@@ -202,12 +210,17 @@ public class Setting {
       this.stopTime = stopTime;
       return this;
     }
+    
+    public SettingBuilder setFailureRate(int failureRate) {
+      this.failureRate = failureRate;
+      return this;
+    }
 
     public Setting build() {
       return new Setting(vehicleLength, timeWindow, minTimeSteps,
           explorationFreq, intentionFreq, intentionChangingThreshold,
           pheromoneLifeTime, mapSizeX, mapSizeY, blockSize, numberOfAgents,
-          dynamicRate, pathLength, stopTime);
+          dynamicRate, pathLength, stopTime, failureRate);
     }
   }
 }

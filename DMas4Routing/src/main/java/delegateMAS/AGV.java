@@ -33,10 +33,11 @@ class AGV implements TickListener, MovingRoadUser {
   private int idealLength = 0;
   private int realLength = 0;
   private int distance = 0;
+  private int failureRate = 0;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID,
       int minTimeSteps, int explorationFreq, int intentionFreq,
-      int intentionChangingThreshold, int pathLength) {
+      int intentionChangingThreshold, int pathLength, int failureRate) {
     rng = r;
     roadModel = Optional.absent();
     destination = Optional.absent();
@@ -48,6 +49,7 @@ class AGV implements TickListener, MovingRoadUser {
     this.intentionFreq = intentionFreq;
     this.intentionChangingThreshold = intentionChangingThreshold;
     this.pathLength = pathLength;
+    this.failureRate = failureRate;
   }
 
   @Override
@@ -100,7 +102,8 @@ class AGV implements TickListener, MovingRoadUser {
           } else if (route.getRoute().size() > path.size()
               && VirtualEnvironment.getHammingDistance(
                   route.getRoute().get(path.size() - 1), destination.get()) < VirtualEnvironment
-                  .getHammingDistance(path.getLast(), destination.get())) {
+                  .getHammingDistance(path.getLast(), destination.get())
+                  * intentionChangingThreshold / 100) {
             setPath(route);
             bookResource(startTime);
           }
@@ -124,12 +127,18 @@ class AGV implements TickListener, MovingRoadUser {
         || (roadModel.get().getGraph()
             .hasConnection(getPosition(), path.getFirst()) && !roadModel.get()
             .isOccupied(path.getFirst()))) {
-      roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-      path.removeFirst();
+      if (getPosition().equals(path.getFirst())
+          || (rng.nextInt(100) + 1) > failureRate) {
+        roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+        path.removeFirst();
+      }
     } else {
       exploreAndBook(startTime);
-      roadModel.get().moveTo(this, path.getFirst(), timeLapse);
-      path.removeFirst();
+      if (getPosition().equals(path.getFirst())
+          || (rng.nextInt(100) + 1) > failureRate) {
+        roadModel.get().moveTo(this, path.getFirst(), timeLapse);
+        path.removeFirst();
+      }
     }
     
     pathQuality--;

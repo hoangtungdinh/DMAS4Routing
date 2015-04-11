@@ -33,6 +33,9 @@ public class VirtualEnvironment implements TickListener {
   private int dynamicRate;
   private int timeWindow;
   
+  private Point removedNode1 = null;
+  private Point removedNode2 = null;
+  
   /**
    * Instantiates a new virtual environment.
    *
@@ -397,14 +400,27 @@ public class VirtualEnvironment implements TickListener {
   
   public void changeGraphStructure() {
     if (r.nextInt(100) + 1 <= dynamicRate) {
-      final Point randNode = roadModel.get().getGraph().getRandomNode(r);
-      Collection<Point> nextNodes = roadModel.get().getGraph()
-          .getOutgoingConnections(randNode);
-      roadModel
-          .get()
-          .getGraph()
-          .removeConnection(randNode,
-              (Point) nextNodes.toArray()[r.nextInt(nextNodes.size())]);
+      if (removedNode1 != null && removedNode2 != null) {
+        roadModel.get().getGraph().addConnection(removedNode1, removedNode2);
+        roadModel.get().getGraph().addConnection(removedNode2, removedNode1);
+      }
+      
+      Point randNode = null;
+      Point nextNode = null;
+
+      do {
+        randNode = roadModel.get().getGraph().getRandomNode(r);
+        final Collection<Point> nextNodes = roadModel.get().getGraph()
+            .getOutgoingConnections(randNode);
+        final List<Point> listNextNodes = new ArrayList<>(nextNodes);
+        nextNode = listNextNodes.get(r.nextInt(listNextNodes.size()));
+      } while (randNode == removedNode1 || randNode == removedNode2
+          || nextNode == removedNode1 || nextNode == removedNode2);
+
+      roadModel.get().getGraph().removeConnection(randNode, nextNode);
+      roadModel.get().getGraph().removeConnection(nextNode, randNode);
+      removedNode1 = randNode;
+      removedNode2 = nextNode;
     }
   }
 }
