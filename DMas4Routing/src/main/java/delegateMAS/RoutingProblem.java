@@ -220,7 +220,7 @@ public class RoutingProblem {
     
     FileInputStream fin;
     try {
-      fin = new FileInputStream("Map100x100");
+      fin = new FileInputStream("Map3");
       ObjectInputStream ois = new ObjectInputStream(fin);
       map = (BenchmarkMap) ois.readObject();
       fin.close();
