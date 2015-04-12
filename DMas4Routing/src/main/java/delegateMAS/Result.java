@@ -23,13 +23,17 @@ public class Result implements TickListener {
   private Setting setting;
   private Simulator simulator;
   private String fileID;
+  private VirtualEnvironment virtualEnvironment;
+  private int numberOfAgents = 0;
+  private int totalSuccesses = 0;
   
   public Result(CollisionGraphRoadModel roadModel, Simulator simulator,
-      Setting setting, String fileID) {
+      Setting setting, String fileID, VirtualEnvironment virtualEnvironment) {
     this.roadModel = roadModel;
     this.simulator = simulator;
     this.setting = setting;
     this.fileID = fileID;
+    this.virtualEnvironment = virtualEnvironment;
   }
 
   @Override
@@ -37,7 +41,31 @@ public class Result implements TickListener {
 
   @Override
   public void afterTick(TimeLapse timeLapse) {
-    if (timeLapse.getTime() >= setting.getStopTime()) {
+    if (timeLapse.getStartTime() % 50000 == 0) {
+      final int rand = simulator.getRandomGenerator().nextInt(100);
+      if (numberOfAgents + rand < 1000) {
+        numberOfAgents += rand;
+        for (int i = 0; i < rand; i++) {
+          simulator.register(new AGV(simulator.getRandomGenerator(),
+              virtualEnvironment, (int) (timeLapse.getStartTime() / 1000 + i),
+              setting.getMinTimeSteps(), setting.getExplorationFreq(), setting
+                  .getIntentionFreq(), setting.getIntentionChangingThreshold(),
+              setting.getPathLength(), setting.getFailureRate(), this));
+        }
+      } else {
+        final int remaningAgents = 1000 - numberOfAgents;
+        numberOfAgents = 1000;
+        for (int i = 0; i < remaningAgents; i++) {
+          simulator.register(new AGV(simulator.getRandomGenerator(),
+              virtualEnvironment, (int) (timeLapse.getStartTime() / 1000 + i),
+              setting.getMinTimeSteps(), setting.getExplorationFreq(), setting
+                  .getIntentionFreq(), setting.getIntentionChangingThreshold(),
+              setting.getPathLength(), setting.getFailureRate(), this));
+        }
+      }
+    }
+    
+    if (roadModel.getObjects().size() == 0) {
       print();
       simulator.stop();
       System.out.println("COMPLETE!!!");
@@ -87,7 +115,7 @@ public class Result implements TickListener {
       }
       printWriter.println("Best: " + best);
       printWriter.println("Worst: " + worst);
-      printWriter.println("Total: " + total);
+      printWriter.println("Total: " + totalSuccesses);
       printWriter.println("Average successes: "
           + (((double) total) / roadUserList.size()));
       printWriter.println("Average real length: "
@@ -104,5 +132,9 @@ public class Result implements TickListener {
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
+  }
+  
+  void increaseSuccesses(int successes) {
+    totalSuccesses += successes;
   }
 }

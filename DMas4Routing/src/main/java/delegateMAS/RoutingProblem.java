@@ -41,7 +41,7 @@ public class RoutingProblem {
   public void run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
+        .builder(createGraph4()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
@@ -52,15 +52,15 @@ public class RoutingProblem {
         setting.getTimeWindow(), setting.getPheromoneLifeTime());
     sim.addTickListener(virtualEnvironment);
 
-    for (int i = 0; i < setting.getNumberOfAgents(); i++) {
-      sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment, i,
-          setting.getMinTimeSteps(), setting.getExplorationFreq(), setting
-              .getIntentionFreq(), setting.getIntentionChangingThreshold(),
-          setting.getPathLength(), setting.getFailureRate()));
-    }
+//    for (int i = 0; i < setting.getNumberOfAgents(); i++) {
+//      sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment, i,
+//          setting.getMinTimeSteps(), setting.getExplorationFreq(), setting
+//              .getIntentionFreq(), setting.getIntentionChangingThreshold(),
+//          setting.getPathLength(), setting.getFailureRate()));
+//    }
     
     sim.addTickListener(new Result(collisionGraphRoadModel, sim, setting,
-        fileID));
+        fileID, virtualEnvironment));
 
     if (viewOn) {
       View.create(sim)

@@ -4,9 +4,9 @@ package delegateMAS;
 public class Experiment {
 
   public static void main(String[] args) {
-    final int intention = 10;
+    final int intention = 1;
     Setting setting = new Setting.SettingBuilder()
-    .setTimeWindow(50)
+    .setTimeWindow(30)
     .setMinTimeSteps(10)
     .setExplorationFreq(5)
     .setIntentionFreq(intention)
@@ -15,14 +15,14 @@ public class Experiment {
     .setMapSizeX(100)
     .setMapSizeY(100)
     .setBlockSize(1)
-    .setNumberOfAgents(1000)
+    .setNumberOfAgents(0)
     .setDynamicRate(0)
-    .setStopTime(1000 * 1000)
+    .setStopTime(100000000 * 1000)
     .setFailureRate(0)
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "-TimeWindow-RandomMap-30-10", false);
+        "-NumOfAgentVaried-map1", false);
     routingProblem.run();
   }
 }

@@ -34,10 +34,13 @@ class AGV implements TickListener, MovingRoadUser {
   private int realLength = 0;
   private int distance = 0;
   private int failureRate = 0;
+  private long createdTime = -1;
+  private boolean stop = false;
+  private Result result;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID,
       int minTimeSteps, int explorationFreq, int intentionFreq,
-      int intentionChangingThreshold, int pathLength, int failureRate) {
+      int intentionChangingThreshold, int pathLength, int failureRate, Result result) {
     rng = r;
     roadModel = Optional.absent();
     destination = Optional.absent();
@@ -50,6 +53,7 @@ class AGV implements TickListener, MovingRoadUser {
     this.intentionChangingThreshold = intentionChangingThreshold;
     this.pathLength = pathLength;
     this.failureRate = failureRate;
+    this.result = result;
   }
 
   @Override
@@ -78,6 +82,14 @@ class AGV implements TickListener, MovingRoadUser {
 
   @Override
   public void tick(TimeLapse timeLapse) {
+    if (stop) {
+      return;
+    }
+    
+    if (createdTime == -1) {
+      createdTime = timeLapse.getStartTime();
+    }
+    
     long startTime = timeLapse.getStartTime();
 
     if (!destination.isPresent()) {
@@ -149,6 +161,12 @@ class AGV implements TickListener, MovingRoadUser {
   public void afterTick(TimeLapse timeLapse) {
     expCounter++;
     intCounter++;
+    
+    if ((timeLapse.getStartTime() - createdTime) == 1000000) {
+      result.increaseSuccesses(success);
+      roadModel.get().removeObject(this);
+      stop = true;
+    }
   }
   
   public void resetExpCounter() {
