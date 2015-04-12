@@ -41,7 +41,7 @@ public class RoutingProblem {
   public void run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
+        .builder(createGraph4()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
@@ -189,7 +189,7 @@ public class RoutingProblem {
     
     try {
       ObjectOutputStream objectOutputStream = new ObjectOutputStream(
-          new FileOutputStream("map.txt"));
+          new FileOutputStream("Map5"));
       objectOutputStream.writeObject(map);
       objectOutputStream.close();
       
@@ -220,7 +220,7 @@ public class RoutingProblem {
     
     FileInputStream fin;
     try {
-      fin = new FileInputStream("Map100x100");
+      fin = new FileInputStream("Map2");
       ObjectInputStream ois = new ObjectInputStream(fin);
       map = (BenchmarkMap) ois.readObject();
       fin.close();
