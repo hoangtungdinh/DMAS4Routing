@@ -22,7 +22,7 @@ public class Experiment {
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "-NumOfAgentVaried-map3", false);
+        "-NumOfAgentVaried-map4", false);
     routingProblem.run();
   }
 }
