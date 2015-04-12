@@ -4,14 +4,11 @@ package delegateMAS;
 public class Experiment {
 
   public static void main(String[] args) {
-    final int intention = 1;
-    final int dynamicRate = 0;
-    final int exploration = 40;
-    final int failureRate = 0;
+    final int intention = 10;
     Setting setting = new Setting.SettingBuilder()
     .setTimeWindow(50)
     .setMinTimeSteps(10)
-    .setExplorationFreq(exploration)
+    .setExplorationFreq(5)
     .setIntentionFreq(intention)
     .setIntentionChangingThreshold(70)
     .setPheromoneLifeTime(intention + 1)
@@ -19,13 +16,13 @@ public class Experiment {
     .setMapSizeY(100)
     .setBlockSize(1)
     .setNumberOfAgents(1000)
-    .setDynamicRate(dynamicRate)
+    .setDynamicRate(0)
     .setStopTime(1000 * 1000)
-    .setFailureRate(failureRate)
+    .setFailureRate(0)
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "-ExplorationFreq-" + exploration, false);
+        "-TimeWindow-RandomMap-30-10", false);
     routingProblem.run();
   }
 }
