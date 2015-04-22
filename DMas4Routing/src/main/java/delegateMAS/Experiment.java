@@ -12,17 +12,17 @@ public class Experiment {
     .setIntentionFreq(intention)
     .setIntentionChangingThreshold(70)
     .setPheromoneLifeTime(intention + 1)
-    .setMapSizeX(14)
-    .setMapSizeY(14)
+    .setMapSizeX(100)
+    .setMapSizeY(100)
     .setBlockSize(1)
-    .setNumberOfAgents(150)
+    .setNumberOfAgents(32)
     .setDynamicRate(0)
-    .setStopTime(10000 * 1000)
+    .setStopTime(1000 * 1000)
     .setFailureRate(0)
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "test100agents", true);
+        "test2000agents", false);
     routingProblem.run();
   }
 }

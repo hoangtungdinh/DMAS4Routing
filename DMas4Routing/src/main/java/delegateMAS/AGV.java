@@ -87,6 +87,7 @@ class AGV implements TickListener, MovingRoadUser {
       success++;
       realLength = (int) timeLapse.getStartTime() / 1000;
       idealLength += distance;
+      //TODO set next destination here
       nextDestination();
       exploreAndBook(startTime);
     } else if (path.size() < minTimeSteps) {
