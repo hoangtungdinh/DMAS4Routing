@@ -5,7 +5,7 @@ public class Experiment {
 
   public static void main(String[] args) {
     final int intention = 1;
-    final int numOfAgents = 1;
+    final int numOfAgents = 200;
     Setting setting = new Setting.SettingBuilder()
     .setTimeWindow(30)
     .setMinTimeSteps(10)
@@ -18,12 +18,12 @@ public class Experiment {
     .setBlockSize(1)
     .setNumberOfAgents(numOfAgents)
     .setDynamicRate(0)
-    .setStopTime(10000 * 1000)
+    .setStopTime(1000 * 1000)
     .setFailureRate(0)
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "full" + numOfAgents, false);
+        "32x32_" + numOfAgents, false);
     routingProblem.run();
   }
 }
