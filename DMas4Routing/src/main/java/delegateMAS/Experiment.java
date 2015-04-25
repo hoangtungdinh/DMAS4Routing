@@ -5,6 +5,7 @@ public class Experiment {
 
   public static void main(String[] args) {
     final int intention = 1;
+    final int numOfAgents = 4000;
     Setting setting = new Setting.SettingBuilder()
     .setTimeWindow(30)
     .setMinTimeSteps(10)
@@ -15,14 +16,14 @@ public class Experiment {
     .setMapSizeX(100)
     .setMapSizeY(100)
     .setBlockSize(1)
-    .setNumberOfAgents(32)
+    .setNumberOfAgents(numOfAgents)
     .setDynamicRate(0)
     .setStopTime(1000 * 1000)
     .setFailureRate(0)
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "test2000agents", false);
+        "map100x100_10000timesteps" + numOfAgents, false);
     routingProblem.run();
   }
 }
