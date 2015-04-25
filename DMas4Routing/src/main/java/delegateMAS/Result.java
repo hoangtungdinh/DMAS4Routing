@@ -23,13 +23,15 @@ public class Result implements TickListener {
   private Setting setting;
   private Simulator simulator;
   private String fileID;
+  private VirtualEnvironment virtualEnvironment;
   
   public Result(CollisionGraphRoadModel roadModel, Simulator simulator,
-      Setting setting, String fileID) {
+      Setting setting, String fileID, VirtualEnvironment virtualEnvironment) {
     this.roadModel = roadModel;
     this.simulator = simulator;
     this.setting = setting;
     this.fileID = fileID;
+    this.virtualEnvironment = virtualEnvironment;
   }
 
   @Override
@@ -37,7 +39,9 @@ public class Result implements TickListener {
 
   @Override
   public void afterTick(TimeLapse timeLapse) {
-    if (timeLapse.getTime() >= setting.getStopTime()) {
+    if (timeLapse.getTime() >= setting.getStopTime()
+        || virtualEnvironment.getNumberOfSuccesses() == setting
+            .getNumberOfAgents()) {
       print();
       simulator.stop();
       System.out.println("COMPLETE!!!");

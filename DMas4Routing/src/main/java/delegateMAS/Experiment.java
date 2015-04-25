@@ -15,14 +15,14 @@ public class Experiment {
     .setMapSizeX(16)
     .setMapSizeY(16)
     .setBlockSize(1)
-    .setNumberOfAgents(20)
+    .setNumberOfAgents(16)
     .setDynamicRate(0)
     .setStopTime(1000 * 1000)
     .setFailureRate(0)
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "test2000agents", true);
+        "test2000agents", false);
     routingProblem.run();
   }
 }

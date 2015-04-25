@@ -32,6 +32,7 @@ public class VirtualEnvironment implements TickListener {
   private RandomGenerator r;
   private int dynamicRate;
   private int timeWindow;
+  private int numberOfSucesses;
   
   private Point removedNode1 = null;
   private Point removedNode2 = null;
@@ -47,6 +48,7 @@ public class VirtualEnvironment implements TickListener {
     this.dynamicRate = dynamicRate;
     this.timeWindow = timeWindow;
     this.roadModel = Optional.of(roadModel);
+    this.numberOfSucesses = 0;
     
     Set<Point> nodes = roadModel.getGraph().getNodes();
     
@@ -70,7 +72,7 @@ public class VirtualEnvironment implements TickListener {
         edgeAgents.put(conn1, resourceAgent);
         edgeAgents.put(conn2, resourceAgent);
       }
-    }    
+    }
   }
   
   public Route explore(int agentID, int priority, Point start, Point goal,
@@ -423,5 +425,17 @@ public class VirtualEnvironment implements TickListener {
       removedNode1 = randNode;
       removedNode2 = nextNode;
     }
+  }
+  
+  public void increaseSuccesses() {
+    numberOfSucesses++;
+  }
+  
+  public void decreaseSuccesses() {
+    numberOfSucesses--;
+  }
+  
+  public int getNumberOfSuccesses() {
+    return numberOfSucesses;
   }
 }

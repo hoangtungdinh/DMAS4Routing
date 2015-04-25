@@ -65,7 +65,7 @@ public class RoutingProblem {
     }
     
     sim.addTickListener(new Result(collisionGraphRoadModel, sim, setting,
-        fileID));
+        fileID, virtualEnvironment));
 
     if (viewOn) {
       View.create(sim)
