@@ -227,11 +227,12 @@ public class VirtualEnvironment implements TickListener {
       final Point lastNode = route.getLastNode();
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();
-      outgoingNodes.add(lastNode);
       outgoingNodes.addAll(roadModel.get().getGraph()
           .getOutgoingConnections(lastNode));
       // shuffle whole list
       Collections.shuffle(outgoingNodes);
+      // prefer lastnode first
+      outgoingNodes.add(lastNode);
       for (Point nextNode : outgoingNodes) {
         if (route.getRoute().size() == 1 && !nextNode.equals(lastNode)
             && roadModel.get().isOccupied(nextNode)) {

@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.math3.random.RandomGenerator;
+
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
 import com.github.rinde.rinsim.geom.Graph;
@@ -51,12 +53,15 @@ public class RoutingProblem {
         collisionGraphRoadModel, sim, setting.getDynamicRate(),
         setting.getTimeWindow(), setting.getPheromoneLifeTime());
     sim.addTickListener(virtualEnvironment);
+    
+    final List<Point> destinations = getDestinations(collisionGraphRoadModel,
+        setting.getNumberOfAgents(), sim.getRandomGenerator());
 
     for (int i = 0; i < setting.getNumberOfAgents(); i++) {
       sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment, i,
           setting.getMinTimeSteps(), setting.getExplorationFreq(), setting
               .getIntentionFreq(), setting.getIntentionChangingThreshold(),
-          setting.getPathLength(), setting.getFailureRate()));
+          setting.getPathLength(), setting.getFailureRate(), destinations.get(i)));
     }
     
     sim.addTickListener(new Result(collisionGraphRoadModel, sim, setting,
@@ -236,5 +241,20 @@ public class RoutingProblem {
     }
 
     return new ListenableGraph<>(g);
+  }
+
+  public List<Point> getDestinations(CollisionGraphRoadModel roadModel,
+      int numOfAgents, RandomGenerator r) {
+    List<Point> destinations = new ArrayList<>();
+    while (destinations.size() < numOfAgents) {
+      final Point point = roadModel.getGraph().getRandomNode(r);
+      if (destinations.contains(point)) {
+        continue;
+      } else {
+        destinations.add(point);
+      }
+    }
+    
+    return destinations;
   }
 }
