@@ -40,7 +40,7 @@ public class RoutingProblem {
     this.viewOn = viewOn;
   }
 
-  public void run() {
+  public Result run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
         .builder(loadRandomMap()).setVehicleLength(setting.getVehicleLength())
@@ -64,8 +64,10 @@ public class RoutingProblem {
           setting.getPathLength(), setting.getFailureRate(), destinations.get(i)));
     }
     
-    sim.addTickListener(new Result(collisionGraphRoadModel, sim, setting,
-        fileID, virtualEnvironment));
+    Result result = new Result(collisionGraphRoadModel, sim, setting, fileID,
+        virtualEnvironment);
+    
+    sim.addTickListener(result);
 
     if (viewOn) {
       View.create(sim)
@@ -79,6 +81,8 @@ public class RoutingProblem {
     } else {
       sim.start();
     }
+    
+    return result;
   }
 
   public ImmutableTable<Integer, Integer, Point> createMatrix(int cols,

@@ -24,6 +24,8 @@ public class Result implements TickListener {
   private Simulator simulator;
   private String fileID;
   private VirtualEnvironment virtualEnvironment;
+  private double successRatio;
+  private double avgPathLength;
   
   public Result(CollisionGraphRoadModel roadModel, Simulator simulator,
       Setting setting, String fileID, VirtualEnvironment virtualEnvironment) {
@@ -52,7 +54,7 @@ public class Result implements TickListener {
   public void print() {
     String date = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
         .format(new Date());
-    String fileName = date + fileID;
+    String fileName = "Result/" + date + fileID;
     try {
       PrintWriter printWriter = new PrintWriter(new FileOutputStream(fileName,
           true));
@@ -94,17 +96,17 @@ public class Result implements TickListener {
       printWriter.println("Best: " + best);
       printWriter.println("Worst: " + worst);
       printWriter.println("Total: " + total);
-      printWriter.println("Average successes: "
-          + (((double) total) / roadUserList.size()));
+      successRatio = ((double) total) / roadUserList.size();
+      printWriter.println("Average successes: " + successRatio);
       printWriter.println("Average real length: "
           + (new DecimalFormat("##.00").format(((double) totalRealLength)
               / roadUserList.size())));
       printWriter.println("Average ideal length: "
           + (new DecimalFormat("##.00").format(((double) totalIdealLength)
               / roadUserList.size())));
+      avgPathLength = ((double) totalRealLength) / totalIdealLength;
       printWriter.println("Average Ratio: "
-          + (new DecimalFormat("##.00").format(((double) totalRealLength)
-              / totalIdealLength)));
+          + (new DecimalFormat("##.00").format(avgPathLength)));
       
       System.out.println(total);
       
@@ -112,5 +114,13 @@ public class Result implements TickListener {
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
+  }
+  
+  public double getSuccessRatio() {
+    return successRatio;
+  }
+  
+  public double getAvgPathLength() {
+    return avgPathLength;
   }
 }
