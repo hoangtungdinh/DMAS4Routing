@@ -23,8 +23,8 @@ public class Experiment {
     
     for (int numOfAgents = 1; numOfAgents <= 20; numOfAgents++) {
       for (int i = 0; i < numOfRuns; i++) {
-        System.out.println("Number of Agents: " + numOfAgents + "\t" + "Run: "
-            + (i + 1));
+        System.out.println("Number of Agents: " + (numOfAgents * 100) + "\t"
+            + "Run: " + (i + 1));
         
         Setting setting = new Setting.SettingBuilder().setTimeWindow(30)
             .setMinTimeSteps(10)
@@ -79,7 +79,7 @@ public class Experiment {
       
       printWriter.print("Success Ratio\t");
       for (Double success : successRatio) {
-        printWriter.print((new DecimalFormat("###.000").format(success)) + "\t");
+        printWriter.print((new DecimalFormat("###.000").format(success*100)) + "\t");
       }
       printWriter.println();
       
