@@ -136,7 +136,7 @@ public class VirtualEnvironment implements TickListener {
         if (!visitedNodes.contains(timeNode)) {
           // check if this pair (node and time slot) is available
           final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-          if (nodeAgent.isAvailable(agentID, priority, time)) {
+          if (nodeAgent.isAvailable(agentID, getPriority(goal, nextNode), time)) {
             // if this pair is available
             if (nextNode.equals(lastNode)) {
               // if next node is similar to current node (AGV stays at the same
@@ -156,13 +156,13 @@ public class VirtualEnvironment implements TickListener {
             } else {
               // if the previous and next time steps are available (to avoid
               // collision)
-              if (nodeAgent.isAvailable(agentID, priority, time - 1000)
-                  && nodeAgent.isAvailable(agentID, priority, time + 1000)) {
+              if (nodeAgent.isAvailable(agentID, getPriority(goal, nextNode), time - 1000)
+                  && nodeAgent.isAvailable(agentID, getPriority(goal, nextNode), time + 1000)) {
                 // if next node is different from current node, check also the
                 // edge between them
                 final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
                     .getGraph().getConnection(lastNode, nextNode));
-                if (edgeAgent.isAvailable(agentID, priority, time)) {
+                if (edgeAgent.isAvailable(agentID, getPriority(goal, nextNode), time)) {
                   // if the edge is also available, then create new route and
                   // add
                   // it to the queue
@@ -191,11 +191,15 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
-    if (longestRoute.getRoute().size() == 1) {
-      ResourceAgent nodeAgent = nodeAgents.get(longestRoute.getRoute().get(0));
-      nodeAgent.setDeadlockWarning(agentID);
-    }
-    return new Route(longestRoute.getRoute());
+//    if (longestRoute.getRoute().size() == 1) {
+//      ResourceAgent nodeAgent = nodeAgents.get(longestRoute.getRoute().get(0));
+//      nodeAgent.setDeadlockWarning(agentID);
+//    }
+//    return new Route(longestRoute.getRoute());
+    
+    ResourceAgent nodeAgent = nodeAgents.get(startRoute.getRoute().get(0));
+    nodeAgent.setDeadlockWarning(agentID);
+    return startRoute;
   }
   
   /**
@@ -216,6 +220,8 @@ public class VirtualEnvironment implements TickListener {
       ArrayList<Point> path, long currentTime, int length) {
     // set of investigated node and time slot
     final Set<TimeNode> visitedNodes = new HashSet<>();
+    
+    final Point goal = path.get(path.size() - 1);
     
     Stack<Route> routeStack = new Stack<Route>();
     routeStack.push(new Route((ArrayList<Point>) path.clone()));
@@ -245,7 +251,7 @@ public class VirtualEnvironment implements TickListener {
         if (!visitedNodes.contains(timeNode)) {
           // check if node is available
           final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
-          if (nodeAgent.isAvailable(agentID, priority, time)) {
+          if (nodeAgent.isAvailable(agentID, getPriority(goal, nextNode), time)) {
             if (nextNode.equals(lastNode)) {
               // if next node is similar to last node (agv doesn't move)
               final ArrayList<Point> newRoute = route.getRoute();
@@ -259,13 +265,13 @@ public class VirtualEnvironment implements TickListener {
               visitedNodes.add(timeNode);
             } else {
               // check previous and next time steps to avoid collision
-              if (nodeAgent.isAvailable(agentID, priority, time - 1000)
-                  && nodeAgent.isAvailable(agentID, priority, time + 1000)) {
+              if (nodeAgent.isAvailable(agentID, getPriority(goal, nextNode), time - 1000)
+                  && nodeAgent.isAvailable(agentID, getPriority(goal, nextNode), time + 1000)) {
                 // if next node is different from current node, check also the
                 // edge between them
                 final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
                     .getGraph().getConnection(lastNode, nextNode));
-                if (edgeAgent.isAvailable(agentID, priority, time)) {
+                if (edgeAgent.isAvailable(agentID, getPriority(goal, nextNode), time)) {
                   // if edge is also available
                   final ArrayList<Point> newRoute = route.getRoute();
                   newRoute.add(nextNode);
@@ -288,7 +294,16 @@ public class VirtualEnvironment implements TickListener {
       }
     }
     
-    return longestRoute;
+    // if is at goal
+    if (path.get(0).equals(path.get(path.size() - 1))) {
+      ResourceAgent nodeAgent = nodeAgents.get(path.get(0));
+      nodeAgent.setDeadlockWarning(agentID);
+      final ArrayList<Point> startRoute = new ArrayList<>();
+      startRoute.add(path.get(0));
+      return startRoute;
+    } else {
+      return path;
+    }
   }
   
   /**
@@ -301,7 +316,7 @@ public class VirtualEnvironment implements TickListener {
    * @return true, if book successfully
    */
   public boolean bookResource(int agentID, int priority, ArrayList<Point> path, Point start,
-      long currentTime) {
+      long currentTime, Point goal) {
     if (path.size() < 1) {
       return false;
     } else if (!start.equals(path.get(0))
@@ -318,7 +333,7 @@ public class VirtualEnvironment implements TickListener {
         // stay at the same position, only need to book node
         final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
         final boolean bookingResponse = nodeAgent.bookResource(agentID,
-            priority, time);
+            getPriority(goal, nextNode), time);
         // if can't book, return false
         if (!bookingResponse) {
           return false;
@@ -331,9 +346,9 @@ public class VirtualEnvironment implements TickListener {
         final ResourceAgent nodeAgent = nodeAgents.get(nextNode);
         final ResourceAgent edgeAgent = edgeAgents.get(roadModel.get()
             .getGraph().getConnection(currentNode, nextNode));
-        final boolean nodeResponse = nodeAgent.bookResource(agentID, priority,
+        final boolean nodeResponse = nodeAgent.bookResource(agentID, getPriority(goal, nextNode),
             time);
-        final boolean edgeResponse = edgeAgent.bookResource(agentID, priority,
+        final boolean edgeResponse = edgeAgent.bookResource(agentID, getPriority(goal, nextNode),
             time);
         // if can't book node or edge, return false
         if (!nodeResponse || !edgeResponse) {
@@ -437,5 +452,13 @@ public class VirtualEnvironment implements TickListener {
   
   public int getNumberOfSuccesses() {
     return numberOfSucesses;
+  }
+  
+  public int getPriority(Point goal, Point nextNode) {
+    if (goal.equals(nextNode)) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 }

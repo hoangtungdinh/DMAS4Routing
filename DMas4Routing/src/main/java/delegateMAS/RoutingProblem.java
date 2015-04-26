@@ -43,8 +43,12 @@ public class RoutingProblem {
   public void run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
+        .builder(loadRandomGraph()).setVehicleLength(setting.getVehicleLength())
         .build();
+    
+//    CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
+//        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
+//        .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
         .build();
@@ -207,7 +211,7 @@ public class RoutingProblem {
     return new ListenableGraph<>(g);
   }
   
-  public ListenableGraph<LengthData> createGraph4() {
+  public ListenableGraph<LengthData> loadRandomGraph() {
     final Graph<LengthData> g = new TableGraph<>();
 
     final Table<Integer, Integer, Point> matrix = createMatrix(

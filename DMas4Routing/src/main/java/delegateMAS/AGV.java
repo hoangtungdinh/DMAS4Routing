@@ -191,7 +191,7 @@ class AGV implements TickListener, MovingRoadUser {
   public boolean bookResource(long startTime) {
     resetIntCounter();
     final boolean bookingResponse = virtualEnvironment.bookResource(agentID,
-        success, new ArrayList<Point>(path), getPosition(), startTime);
+        success, new ArrayList<Point>(path), getPosition(), startTime, destination.get());
 
     return bookingResponse;
   }
