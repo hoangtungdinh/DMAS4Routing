@@ -5,7 +5,7 @@ public class Experiment {
 
   public static void main(String[] args) {
     final int intention = 1;
-    final int numOfAgents = 1000;
+    final int numOfAgents = 2000;
     Setting setting = new Setting.SettingBuilder()
     .setTimeWindow(30)
     .setMinTimeSteps(10)
@@ -23,7 +23,7 @@ public class Experiment {
     .build();
 
     RoutingProblem routingProblem = new RoutingProblem(setting,
-        "32x32_" + numOfAgents, false);
+        "map4random" + numOfAgents, false);
     routingProblem.run();
   }
 }

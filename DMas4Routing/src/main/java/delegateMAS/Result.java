@@ -105,7 +105,9 @@ public class Result implements TickListener {
       printWriter.println("Average Ratio: "
           + (new DecimalFormat("##.00").format(((double) totalRealLength)
               / totalIdealLength)));
-
+      
+      System.out.println(total);
+      
       printWriter.close();
     } catch (FileNotFoundException e) {
       e.printStackTrace();
