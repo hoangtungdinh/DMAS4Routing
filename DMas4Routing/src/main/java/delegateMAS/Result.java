@@ -88,7 +88,7 @@ public class Result implements TickListener {
             + "\t"
             + (new DecimalFormat("##.00").format(((double) agv.getRealLength())
                 / agv.getIdealLength())));
-        if (agv.getRealLength() != 0) {
+        if (agv.getRealLength() != 0 && agv.getNumberOfSuccesses() != 0) {
           totalIdealLength += agv.getIdealLength();
           totalRealLength += agv.getRealLength();
         }
