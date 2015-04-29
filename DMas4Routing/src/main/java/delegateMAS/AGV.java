@@ -58,7 +58,7 @@ class AGV implements TickListener, MovingRoadUser {
     Point p;
     do {
       p = model.getRandomPosition(rng);
-    } while (roadModel.get().isOccupied(p));
+    } while (roadModel.get().isOccupied(p) || p.equals(destination.get()));
     roadModel.get().addObjectAt(this, p);
     
     idealLength = VirtualEnvironment.getShortestPathDistance(roadModel.get(),
