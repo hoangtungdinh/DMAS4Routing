@@ -10,24 +10,25 @@ import java.util.Date;
 import java.util.List;
 
 
-public class ExperimentActionFailure {
+public class ExperimentTimeWindow {
 
   public static void main(String[] args) {
     final int intention = 1;
     final int numOfRuns = 10;
-    final String fileName = "-1000AgentsActFailLattice-";
+    final String fileName = "-2000AgentsTimeWindowLattice-";
     
     List<Result> resultList = new ArrayList<>();
     List<Double> successRatio = new ArrayList<>();
     List<Double> avgPathLength = new ArrayList<>();
     
-    for (int failureRate = 0; failureRate <= 6; failureRate++) {
+    for (int timeWindow = 1; timeWindow <= 6; timeWindow++) {
       for (int i = 0; i < numOfRuns; i++) {
-        System.out.println("Failure Rate: " + (failureRate * 5) + "\t"
+        System.out.println("Time Window: " + (timeWindow * 5) + "\t"
             + "Run: " + (i + 1));
         
-        Setting setting = new Setting.SettingBuilder().setTimeWindow(30)
-            .setMinTimeSteps(10)
+        Setting setting = new Setting.SettingBuilder()
+            .setTimeWindow(timeWindow*5)
+            .setMinTimeSteps((timeWindow*5)/3)
             .setExplorationFreq(5)
             .setIntentionFreq(intention)
             .setIntentionChangingThreshold(70)
@@ -35,14 +36,14 @@ public class ExperimentActionFailure {
             .setMapSizeX(100)
             .setMapSizeY(100)
             .setBlockSize(1)
-            .setNumberOfAgents(1000)
+            .setNumberOfAgents(2000)
             .setDynamicRate(0)
             .setStopTime(2000 * 1000)
-            .setFailureRate(failureRate*5)
+            .setFailureRate(0)
             .build();
 
         RoutingProblem routingProblem = new RoutingProblem(setting,
-            fileName + (failureRate*5) + "_" + (i + 1), false);
+            fileName + (timeWindow*5) + "_" + (i + 1), false);
         final Result result = routingProblem.run();
         resultList.add(result);
       }

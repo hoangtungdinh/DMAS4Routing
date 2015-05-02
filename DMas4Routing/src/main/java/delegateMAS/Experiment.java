@@ -15,13 +15,13 @@ public class Experiment {
   public static void main(String[] args) {
     final int intention = 1;
     final int numOfRuns = 10;
-    final String fileName = "-TestDestination-";
+    final String fileName = "-ActFailNumAgentsLattice-";
     
     List<Result> resultList = new ArrayList<>();
     List<Double> successRatio = new ArrayList<>();
     List<Double> avgPathLength = new ArrayList<>();
     
-    for (int numOfAgents = 20; numOfAgents <= 20; numOfAgents++) {
+    for (int numOfAgents = 1; numOfAgents <= 20; numOfAgents++) {
       for (int i = 0; i < numOfRuns; i++) {
         System.out.println("Number of Agents: " + (numOfAgents * 100) + "\t"
             + "Run: " + (i + 1));
@@ -38,7 +38,7 @@ public class Experiment {
             .setNumberOfAgents(numOfAgents*100)
             .setDynamicRate(0)
             .setStopTime(2000 * 1000)
-            .setFailureRate(0)
+            .setFailureRate(0) // TODO change failure rate
             .build();
 
         RoutingProblem routingProblem = new RoutingProblem(setting,

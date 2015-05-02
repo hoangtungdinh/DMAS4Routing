@@ -43,7 +43,7 @@ public class RoutingProblem {
   public Result run() {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
-        .builder(loadRandomMap()).setVehicleLength(setting.getVehicleLength())
+        .builder(createGraph()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)

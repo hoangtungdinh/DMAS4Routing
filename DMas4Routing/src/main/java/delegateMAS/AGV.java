@@ -145,10 +145,11 @@ class AGV implements TickListener, MovingRoadUser {
       if (realLength == 0) {
         realLength = (int) timeLapse.getStartTime() / 1000 + 1;
       }
-    } else if (!getPosition().equals(destination.get()) && success == 1) {
-      success = 0;
-      virtualEnvironment.decreaseSuccesses();
-    }
+    } 
+//    else if (!getPosition().equals(destination.get()) && success == 1) {
+//      success = 0;
+//      virtualEnvironment.decreaseSuccesses();
+//    }
   }
 
   @Override
