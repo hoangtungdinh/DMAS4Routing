@@ -10,40 +10,48 @@ import java.util.Date;
 import java.util.List;
 
 
-public class ExperimentTimeWindow {
+public class ExperimentIntExpRate {
 
   public static void main(String[] args) {
-    final int intention = 1;
+//    final int intention = 1;
     final int numOfRuns = 10;
-    final String fileName = "-2000AgentsTimeWindowMap4Rand-";
+    final String fileName = "-2000AgentsIntExpMap1Rand-";
     
     List<Result> resultList = new ArrayList<>();
     List<Double> successRatio = new ArrayList<>();
     List<Double> avgPathLength = new ArrayList<>();
     
-    for (int timeWindow = 1; timeWindow <= 6; timeWindow++) {
+    for (int rate = 1; rate <= 4; rate++) {
       for (int i = 0; i < numOfRuns; i++) {
-        System.out.println("Time Window: " + (timeWindow * 5) + "\t"
+        int expRate = rate * 5;
+        int intRate = -1;
+        if (expRate == 5) {
+          intRate = 1;
+        } else {
+          intRate = expRate - 5;
+        }
+        
+        System.out.println("Int: " + intRate + "\t" + "Exp: " + expRate + "\t"
             + "Run: " + (i + 1));
         
         Setting setting = new Setting.SettingBuilder()
-            .setTimeWindow(timeWindow*5)
-            .setMinTimeSteps((timeWindow*5)/3)
-            .setExplorationFreq(5)
-            .setIntentionFreq(intention)
+            .setTimeWindow(30)
+            .setMinTimeSteps(10)
+            .setExplorationFreq(expRate)
+            .setIntentionFreq(intRate)
             .setIntentionChangingThreshold(70)
-            .setPheromoneLifeTime(intention + 1)
+            .setPheromoneLifeTime(rate + 1)
             .setMapSizeX(100)
             .setMapSizeY(100)
             .setBlockSize(1)
             .setNumberOfAgents(2000)
             .setDynamicRate(0)
             .setStopTime(2000 * 1000)
-            .setFailureRate(0)
+            .setFailureRate(20) // TODO set failure rate here
             .build();
 
         RoutingProblem routingProblem = new RoutingProblem(setting,
-            fileName + (timeWindow*5) + "_" + (i + 1), false);
+            fileName + (rate*5) + "_" + (i + 1), false);
         final Result result = routingProblem.run();
         resultList.add(result);
       }
@@ -73,8 +81,8 @@ public class ExperimentTimeWindow {
           true));
       
       printWriter.print("FailureRate\t");
-      for (int i = 0; i <= 6; i++) {
-        printWriter.print((i*5) + "\t");
+      for (int i = 1; i <= 4; i++) {
+        printWriter.print(i + "/" + (i*5) + "\t");
       }
       printWriter.println();
       

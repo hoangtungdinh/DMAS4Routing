@@ -10,40 +10,39 @@ import java.util.Date;
 import java.util.List;
 
 
-public class ExperimentTimeWindow {
+public class ExperimentDensity {
 
   public static void main(String[] args) {
     final int intention = 1;
     final int numOfRuns = 10;
-    final String fileName = "-2000AgentsTimeWindowMap4Rand-";
+    final String fileName = "-Density10000steps-";
     
     List<Result> resultList = new ArrayList<>();
     List<Double> successRatio = new ArrayList<>();
     List<Double> avgPathLength = new ArrayList<>();
     
-    for (int timeWindow = 1; timeWindow <= 6; timeWindow++) {
+    for (int density = 1; density <= 18; density++) {
       for (int i = 0; i < numOfRuns; i++) {
-        System.out.println("Time Window: " + (timeWindow * 5) + "\t"
+        System.out.println("Density: " + (density * 5) + "\t"
             + "Run: " + (i + 1));
         
-        Setting setting = new Setting.SettingBuilder()
-            .setTimeWindow(timeWindow*5)
-            .setMinTimeSteps((timeWindow*5)/3)
+        Setting setting = new Setting.SettingBuilder().setTimeWindow(30)
+            .setMinTimeSteps(10)
             .setExplorationFreq(5)
             .setIntentionFreq(intention)
             .setIntentionChangingThreshold(70)
             .setPheromoneLifeTime(intention + 1)
-            .setMapSizeX(100)
-            .setMapSizeY(100)
+            .setMapSizeX(32)
+            .setMapSizeY(32)
             .setBlockSize(1)
-            .setNumberOfAgents(2000)
+            .setNumberOfAgents(32*32*(density*5) / 100)
             .setDynamicRate(0)
-            .setStopTime(2000 * 1000)
-            .setFailureRate(0)
+            .setStopTime(10000 * 1000)
+            .setFailureRate(0) // TODO change failure rate
             .build();
 
         RoutingProblem routingProblem = new RoutingProblem(setting,
-            fileName + (timeWindow*5) + "_" + (i + 1), false);
+            fileName + density + "_" + (i + 1), false);
         final Result result = routingProblem.run();
         resultList.add(result);
       }
@@ -72,8 +71,8 @@ public class ExperimentTimeWindow {
       PrintWriter printWriter = new PrintWriter(new FileOutputStream(fileName,
           true));
       
-      printWriter.print("FailureRate\t");
-      for (int i = 0; i <= 6; i++) {
+      printWriter.print("Density\t");
+      for (int i = 1; i <= 18; i++) {
         printWriter.print((i*5) + "\t");
       }
       printWriter.println();
