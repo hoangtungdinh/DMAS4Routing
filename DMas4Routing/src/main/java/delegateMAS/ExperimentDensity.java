@@ -37,7 +37,7 @@ public class ExperimentDensity {
             .setBlockSize(1)
             .setNumberOfAgents(32*32*(density*5) / 100)
             .setDynamicRate(0)
-            .setStopTime(10000 * 1000)
+            .setStopTime(2000 * 1000)
             .setFailureRate(0) // TODO change failure rate
             .build();
 
