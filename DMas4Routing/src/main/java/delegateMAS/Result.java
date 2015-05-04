@@ -14,22 +14,21 @@ import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.TickListener;
 import com.github.rinde.rinsim.core.TimeLapse;
 import com.github.rinde.rinsim.core.model.road.CollisionGraphRoadModel;
-import com.github.rinde.rinsim.core.model.road.RoadModel;
-import com.github.rinde.rinsim.core.model.road.RoadUser;
 
 public class Result implements TickListener {
   
-  private RoadModel roadModel;
+//  private RoadModel roadModel;
   private Setting setting;
   private Simulator simulator;
   private String fileID;
   private VirtualEnvironment virtualEnvironment;
   private double successRatio;
   private double avgPathLength;
+  private int numAgents = 0;
   
   public Result(CollisionGraphRoadModel roadModel, Simulator simulator,
       Setting setting, String fileID, VirtualEnvironment virtualEnvironment) {
-    this.roadModel = roadModel;
+//    this.roadModel = roadModel;
     this.simulator = simulator;
     this.setting = setting;
     this.fileID = fileID;
@@ -59,8 +58,12 @@ public class Result implements TickListener {
       PrintWriter printWriter = new PrintWriter(new FileOutputStream(fileName,
           true));
       printWriter.println(setting);
-      Set<RoadUser> roadUserSet = roadModel.getObjects();
-      List<RoadUser> roadUserList = new ArrayList<RoadUser>(roadUserSet);
+//      Set<RoadUser> roadUserSet = roadModel.getObjects();
+//      List<RoadUser> roadUserList = new ArrayList<RoadUser>(roadUserSet);
+      
+      Set<TickListener> roadUserSet = simulator.getTickListeners();
+      List<TickListener> roadUserList = new ArrayList<TickListener>(roadUserSet);
+      
       printWriter.println("AgentID" + "\t" + "Successes" + "\t" + "Real Length"
           + "\t" + "Ideal Length" + "\t" + "Ratio");
       int best = Integer.MIN_VALUE;
@@ -68,7 +71,11 @@ public class Result implements TickListener {
       int total = 0;
       int totalRealLength = 0;
       int totalIdealLength = 0;
-      for (RoadUser roadUser : roadUserList) {
+      for (TickListener roadUser : roadUserList) {
+        if (!(roadUser instanceof AGV)) {
+          continue;
+        }
+        numAgents++;
         AGV agv = (AGV) roadUser;
         final int success = agv.getNumberOfSuccesses();
         if (best < success) {
@@ -96,14 +103,14 @@ public class Result implements TickListener {
       printWriter.println("Best: " + best);
       printWriter.println("Worst: " + worst);
       printWriter.println("Total: " + total);
-      successRatio = ((double) total) / roadUserList.size();
+      successRatio = ((double) total) / numAgents;
       printWriter.println("Average successes: " + successRatio);
       printWriter.println("Average real length: "
           + (new DecimalFormat("##.00").format(((double) totalRealLength)
-              / roadUserList.size())));
+              / numAgents)));
       printWriter.println("Average ideal length: "
           + (new DecimalFormat("##.00").format(((double) totalIdealLength)
-              / roadUserList.size())));
+              / numAgents)));
       avgPathLength = ((double) totalRealLength) / totalIdealLength;
       printWriter.println("Average Ratio: "
           + (new DecimalFormat("##.00").format(avgPathLength)));

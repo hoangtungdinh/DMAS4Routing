@@ -34,6 +34,7 @@ class AGV implements TickListener, MovingRoadUser {
   private int realLength = 0;
 //  private int distance = 0;
   private int failureRate = 0;
+  private boolean done = false;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID,
       int minTimeSteps, int explorationFreq, int intentionFreq,
@@ -81,6 +82,10 @@ class AGV implements TickListener, MovingRoadUser {
 
   @Override
   public void tick(TimeLapse timeLapse) {
+    if (done) {
+      return;
+    }
+    
     long startTime = timeLapse.getStartTime();
 
     if (path.isEmpty()) {
@@ -145,6 +150,8 @@ class AGV implements TickListener, MovingRoadUser {
       if (realLength == 0) {
         realLength = (int) timeLapse.getStartTime() / 1000 + 1;
       }
+      roadModel.get().removeObject(this);
+      done = true;
     } 
 //    else if (!getPosition().equals(destination.get()) && success == 1) {
 //      success = 0;

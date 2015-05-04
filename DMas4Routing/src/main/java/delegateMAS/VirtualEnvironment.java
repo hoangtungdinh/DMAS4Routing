@@ -114,9 +114,9 @@ public class VirtualEnvironment implements TickListener {
         return new Route(route.getRoute());
       } else if (lastNode.equals(goal) && route.getRoute().size() > 1) {
         // if reached goal, extend to route to fit the time window, then returns
-        ArrayList<Point> rawRoute = exploreHopsAhead(agentID, priority,
-            route.getRoute(), currentTime, length);
-        return new Route(rawRoute, route.getRoute().size());
+//        ArrayList<Point> rawRoute = exploreHopsAhead(agentID, priority,
+//            route.getRoute(), currentTime, length);
+        return new Route(route.getRoute(), route.getRoute().size());
       }
       // list of all possible next nodes (outgoing nodes and this node)
       final List<Point> outgoingNodes = new ArrayList<>();

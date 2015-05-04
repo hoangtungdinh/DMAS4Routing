@@ -15,7 +15,7 @@ public class Experiment {
   public static void main(String[] args) {
     final int intention = 1;
     final int numOfRuns = 10;
-    final String fileName = "-ActFailNumAgentsLattice-";
+    final String fileName = "-test-";
     
     List<Result> resultList = new ArrayList<>();
     List<Double> successRatio = new ArrayList<>();

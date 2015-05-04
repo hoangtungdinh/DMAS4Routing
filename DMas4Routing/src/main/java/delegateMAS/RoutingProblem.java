@@ -68,6 +68,8 @@ public class RoutingProblem {
         virtualEnvironment);
     
     sim.addTickListener(result);
+    
+    System.out.println("aaaaa: " + sim.getTickListeners().size());
 
     if (viewOn) {
       View.create(sim)
