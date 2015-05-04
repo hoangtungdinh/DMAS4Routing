@@ -63,13 +63,11 @@ public class RoutingProblem {
               .getIntentionFreq(), setting.getIntentionChangingThreshold(),
           setting.getPathLength(), setting.getFailureRate(), destinations.get(i)));
     }
-    
+
     Result result = new Result(collisionGraphRoadModel, sim, setting, fileID,
         virtualEnvironment);
     
     sim.addTickListener(result);
-    
-    System.out.println("aaaaa: " + sim.getTickListeners().size());
 
     if (viewOn) {
       View.create(sim)

@@ -21,7 +21,7 @@ public class Experiment {
     List<Double> successRatio = new ArrayList<>();
     List<Double> avgPathLength = new ArrayList<>();
     
-    for (int numOfAgents = 1; numOfAgents <= 20; numOfAgents++) {
+    for (int numOfAgents = 20; numOfAgents <= 20; numOfAgents++) {
       for (int i = 0; i < numOfRuns; i++) {
         System.out.println("Number of Agents: " + (numOfAgents * 100) + "\t"
             + "Run: " + (i + 1));
