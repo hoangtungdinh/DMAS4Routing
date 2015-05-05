@@ -40,14 +40,14 @@ public class RoutingProblem {
     this.viewOn = viewOn;
   }
 
-  public Result run() {
+  public Result run(long seed) {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
         .builder(loadRandomMap()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
-        .build();
+        .setRandomSeed(seed).build();
 
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
         collisionGraphRoadModel, sim, setting.getDynamicRate(),
@@ -56,13 +56,19 @@ public class RoutingProblem {
     
     final List<Point> destinations = getDestinations(collisionGraphRoadModel,
         setting.getNumberOfAgents(), sim.getRandomGenerator());
-
+    
+    List<AGV> agvList = new ArrayList<AGV>();
+    
     for (int i = 0; i < setting.getNumberOfAgents(); i++) {
-      sim.register(new AGV(sim.getRandomGenerator(), virtualEnvironment, i,
+      final int entryTimeStep = sim.getRandomGenerator().nextInt(100) + 1;
+      agvList.add(new AGV(sim.getRandomGenerator(), virtualEnvironment, i,
           setting.getMinTimeSteps(), setting.getExplorationFreq(), setting
               .getIntentionFreq(), setting.getIntentionChangingThreshold(),
-          setting.getPathLength(), setting.getFailureRate(), destinations.get(i)));
+          setting.getPathLength(), setting.getFailureRate(), destinations
+              .get(i), entryTimeStep * 1000));
     }
+    
+    sim.addTickListener(new EntryControl(agvList, sim));
 
     Result result = new Result(collisionGraphRoadModel, sim, setting, fileID,
         virtualEnvironment);
@@ -229,7 +235,7 @@ public class RoutingProblem {
     
     FileInputStream fin;
     try {
-      fin = new FileInputStream("Map2");
+      fin = new FileInputStream("Map3");
       ObjectInputStream ois = new ObjectInputStream(fin);
       map = (BenchmarkMap) ois.readObject();
       fin.close();

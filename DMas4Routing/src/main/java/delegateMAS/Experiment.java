@@ -15,7 +15,7 @@ public class Experiment {
   public static void main(String[] args) {
     final int intention = 1;
     final int numOfRuns = 10;
-    final String fileName = "-AirTaxiNumAgentsMap2Rand-";
+    final String fileName = "-AirTaxiNumAgentsMap3Rand-";
     
     List<Result> resultList = new ArrayList<>();
     List<Double> successRatio = new ArrayList<>();
@@ -43,7 +43,7 @@ public class Experiment {
 
         RoutingProblem routingProblem = new RoutingProblem(setting,
             fileName + numOfAgents + "_" + (i + 1), false);
-        final Result result = routingProblem.run();
+        final Result result = routingProblem.run(i);
         resultList.add(result);
       }
       

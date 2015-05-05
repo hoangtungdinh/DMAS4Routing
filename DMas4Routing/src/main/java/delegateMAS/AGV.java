@@ -35,10 +35,12 @@ class AGV implements TickListener, MovingRoadUser {
 //  private int distance = 0;
   private int failureRate = 0;
   private boolean done = false;
+  private long entryTime;
 
   AGV(RandomGenerator r, VirtualEnvironment virtualEnvironment, int agentID,
       int minTimeSteps, int explorationFreq, int intentionFreq,
-      int intentionChangingThreshold, int pathLength, int failureRate, Point destination) {
+      int intentionChangingThreshold, int pathLength, int failureRate,
+      Point destination, long entryTime) {
     rng = r;
     roadModel = Optional.absent();
     this.destination = Optional.of(destination);
@@ -51,6 +53,7 @@ class AGV implements TickListener, MovingRoadUser {
     this.intentionChangingThreshold = intentionChangingThreshold;
     this.pathLength = pathLength;
     this.failureRate = failureRate;
+    this.entryTime = entryTime;
   }
 
   @Override
@@ -237,5 +240,9 @@ class AGV implements TickListener, MovingRoadUser {
   
   public int getRealLength() {
     return realLength;
+  }
+  
+  public long getEntryTime() {
+    return entryTime;
   }
 }
