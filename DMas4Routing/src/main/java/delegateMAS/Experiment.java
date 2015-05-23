@@ -15,7 +15,7 @@ public class Experiment {
   public static void main(String[] args) {
     final int intention = 1;
     final int numOfRuns = 10;
-    final String fileName = "-AirTaxiNumAgentsMap3Rand-";
+    final String fileName = "-AirTaxiNumAgentsLattice-";
     
     List<Result> resultList = new ArrayList<>();
     List<Double> successRatio = new ArrayList<>();
