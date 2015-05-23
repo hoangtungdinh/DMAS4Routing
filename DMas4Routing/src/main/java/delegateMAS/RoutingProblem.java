@@ -40,14 +40,14 @@ public class RoutingProblem {
     this.viewOn = viewOn;
   }
 
-  public Result run() {
+  public Result run(long seed) {
 
     CollisionGraphRoadModel collisionGraphRoadModel = CollisionGraphRoadModel
         .builder(loadRandomMap()).setVehicleLength(setting.getVehicleLength())
         .build();
 
     final Simulator sim = Simulator.builder().addModel(collisionGraphRoadModel)
-        .build();
+        .setRandomSeed(seed).build();
 
     VirtualEnvironment virtualEnvironment = new VirtualEnvironment(
         collisionGraphRoadModel, sim, setting.getDynamicRate(),

@@ -44,7 +44,7 @@ public class ExperimentTimeWindow {
 
         RoutingProblem routingProblem = new RoutingProblem(setting,
             fileName + (timeWindow*5) + "_" + (i + 1), false);
-        final Result result = routingProblem.run();
+        final Result result = routingProblem.run(i);
         resultList.add(result);
       }
       
